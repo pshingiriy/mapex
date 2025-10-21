@@ -2,8 +2,12 @@ import { Search, Bell, Settings, User, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export const FinancialNav = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <nav className="bg-dashboard-nav border-b border-border">
       <div className="px-6 py-3">
@@ -11,11 +15,21 @@ export const FinancialNav = () => {
           <div className="flex items-center gap-6">
             <h1 className="text-lg font-bold text-foreground">TelCompany</h1>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="text-xs">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`text-xs ${location.pathname === '/' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => navigate('/')}
+              >
                 Финансы
               </Button>
-              <Button variant="ghost" size="sm" className="text-xs">
-                Показатели
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`text-xs ${location.pathname === '/structure' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => navigate('/structure')}
+              >
+                Структура Группы
               </Button>
               <Badge variant="secondary" className="bg-primary text-primary-foreground">
                 15 дек 18:28

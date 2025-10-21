@@ -9,7 +9,7 @@ export const FinancialNav = () => {
       <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-lg font-bold text-foreground">Самокат-Food</h1>
+            <h1 className="text-lg font-bold text-foreground">TelCompany</h1>
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="sm" className="text-xs">
                 Финансы

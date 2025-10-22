@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 
 const NonOrganic = () => {
   const [selectedSegment, setSelectedSegment] = useState<string>("all");
@@ -72,6 +73,34 @@ const NonOrganic = () => {
       fcf: { plan: -206, fact: -78, execution: 265 }
     },
   ];
+
+  // Chart data
+  const funnelData = [
+    { name: "Консоль", value: 18 },
+    { name: "КЦ", value: 13 },
+  ];
+
+  const revenueContributionData = [
+    { name: "Неорганика", value: 4.6 },
+    { name: "Органика", value: 95.4 },
+  ];
+
+  const evEbitdaData = [
+    { segment: "Солар", multiple: 6.2 },
+    { segment: "X.Tech", multiple: 8.5 },
+    { segment: "БИТ", multiple: 5.8 },
+    { segment: "ГосТех", multiple: 7.3 },
+    { segment: "ЦХД", multiple: 4.6 },
+  ];
+
+  const quarterlyDealsData = [
+    { quarter: "Q1 2024", deals: 8, amount: 10.2 },
+    { quarter: "Q2 2024", deals: 12, amount: 15.8 },
+    { quarter: "Q3 2024", deals: 11, amount: 12.4 },
+    { quarter: "Q4 2024", deals: 14, amount: 10.2 },
+  ];
+
+  const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
   const getExecutionColor = (execution: number | null) => {
     if (execution === null) return "text-muted-foreground";
@@ -160,6 +189,130 @@ const NonOrganic = () => {
               Без корректировок
             </Button>
           </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Projects in Funnel */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground text-base">Проектов в воронке 2024 г.</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={funnelData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))'
+                    }} 
+                  />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Revenue Contribution */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground text-base">Вклад неорганики в выручку ДЗО</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center">
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={revenueContributionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {revenueContributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))'
+                    }} 
+                    formatter={(value: number) => `${value}%`}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* EV/EBITDA Multiples */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground text-base">EV/EBITDA по сегментам</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={evEbitdaData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="segment" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))'
+                    }} 
+                    formatter={(value: number) => `${value}x`}
+                  />
+                  <Bar dataKey="multiple" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Quarterly Deals Trend */}
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-foreground text-base">Динамика закрытых сделок</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={quarterlyDealsData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="quarter" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))'
+                    }} 
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+                    formatter={(value) => <span className="text-foreground text-sm">{value === 'deals' ? 'Сделки' : 'Сумма (млрд ₽)'}</span>}
+                  />
+                  <Line yAxisId="left" type="monotone" dataKey="deals" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <Line yAxisId="right" type="monotone" dataKey="amount" stroke="hsl(var(--chart-3))" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Results Table */}

@@ -8,6 +8,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   MarkerType,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { ChevronRight, ChevronDown } from 'lucide-react';
@@ -63,37 +65,41 @@ const CustomNode = ({ data }: any) => {
   const isExpanded = data.isExpanded;
   
   return (
-    <div
-      onClick={data.onToggle}
-      className={`
-        px-6 py-3 rounded-xl border-2 backdrop-blur-sm
-        transition-all duration-200
-        ${data.isParent 
-          ? 'bg-primary/20 border-primary/50 shadow-lg shadow-primary/20' 
-          : 'bg-secondary/30 border-border shadow-md'
-        }
-        hover:border-primary/50 hover:shadow-lg
-        min-w-[160px]
-        ${hasChildren ? 'cursor-pointer' : ''}
-      `}
-    >
-      <div className="flex items-center justify-center gap-2">
-        {hasChildren && (
-          <div className="text-muted-foreground">
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </div>
-        )}
-        <div className="text-center">
-          <div className="text-sm font-semibold text-foreground whitespace-nowrap">
-            {data.label}
-          </div>
-          {data.ownership && (
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {data.ownership}
+    <div className="relative">
+      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <div
+        onClick={data.onToggle}
+        className={`
+          px-6 py-3 rounded-xl border-2 backdrop-blur-sm
+          transition-all duration-200
+          ${data.isParent 
+            ? 'bg-primary/20 border-primary/50 shadow-lg shadow-primary/20' 
+            : 'bg-secondary/30 border-border shadow-md'
+          }
+          hover:border-primary/50 hover:shadow-lg
+          min-w-[160px]
+          ${hasChildren ? 'cursor-pointer' : ''}
+        `}
+      >
+        <div className="flex items-center justify-center gap-2">
+          {hasChildren && (
+            <div className="text-muted-foreground">
+              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </div>
           )}
+          <div className="text-center">
+            <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+              {data.label}
+            </div>
+            {data.ownership && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {data.ownership}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
 };

@@ -46,9 +46,9 @@ export const FinancialTable = () => {
         <TableHeader>
           <TableRow className="bg-table-header border-b border-border hover:bg-table-header">
             <TableHead className="text-muted-foreground font-medium">Показатель, млн ₽</TableHead>
-            <TableHead className="text-right text-muted-foreground font-medium">План БЮТ'25</TableHead>
-            <TableHead className="text-right text-muted-foreground font-medium">Факт БЮТ'25</TableHead>
-            <TableHead className="text-right text-muted-foreground font-medium">vs План</TableHead>
+            <TableHead className="text-right text-muted-foreground font-medium">План'25</TableHead>
+            <TableHead className="text-right text-muted-foreground font-medium">Факт'25</TableHead>
+            <TableHead className="text-right text-muted-foreground font-medium">Факт vs План</TableHead>
             <TableHead className="text-right text-muted-foreground font-medium">%</TableHead>
           </TableRow>
         </TableHeader>

@@ -32,42 +32,42 @@ const NonOrganic = () => {
   const companyData = [
     { 
       id: 1, 
-      name: "КОРТЕОС ООО", 
+      name: "Company 1", 
       revenue: { plan: 126, fact: 94, execution: 135 },
       oibda: { plan: 10, fact: 18, execution: 181 },
       fcf: { plan: 11, fact: 14, execution: 134 }
     },
     { 
       id: 2, 
-      name: "КоммИТ Кэпитал", 
+      name: "Company 2", 
       revenue: { plan: null, fact: 481, execution: 0 },
       oibda: { plan: 284, fact: -8, execution: 3 },
       fcf: { plan: 283, fact: -16, execution: 6 }
     },
     { 
       id: 3, 
-      name: "Медиа Сервис", 
+      name: "Company 3", 
       revenue: { plan: 160, fact: 347, execution: 46 },
       oibda: { plan: 1, fact: -76, execution: 8 },
       fcf: { plan: 475, fact: 23, execution: 745 }
     },
     { 
       id: 4, 
-      name: "Система бронирования отелей", 
+      name: "Company 4", 
       revenue: { plan: 12, fact: 46, execution: 25 },
       oibda: { plan: -113, fact: -59, execution: 191 },
       fcf: { plan: -56, fact: -90, execution: 62 }
     },
     { 
       id: 5, 
-      name: "ФАЗЗИ ЛОДЖИК ЛАБС ООО", 
+      name: "Company 5", 
       revenue: { plan: 193, fact: 260, execution: 74 },
       oibda: { plan: -1, fact: -1, execution: 63 },
       fcf: { plan: -1, fact: -1, execution: 56 }
     },
     { 
       id: 6, 
-      name: "Фабрика цифровых продуктов", 
+      name: "Company 6", 
       revenue: { plan: null, fact: 0, execution: null },
       oibda: { plan: 99, fact: 58, execution: 58 },
       fcf: { plan: -206, fact: -78, execution: 265 }

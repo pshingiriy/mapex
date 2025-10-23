@@ -78,7 +78,6 @@ const CorporateStandards = () => {
       <main className="container mx-auto px-6 py-6 animate-fade-in">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground mb-2">Соблюдение групповых стандартов</h1>
-          <p className="text-sm text-muted-foreground">БЛ, проверяет вопросы, комплаенс, ДЗО</p>
         </div>
 
         {/* View Toggle */}
@@ -90,28 +89,10 @@ const CorporateStandards = () => {
           >
             Соблюдение групповых стандартов
           </Button>
-          <Button
-            variant={activeView === "methodology" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveView("methodology")}
-          >
-            Методология РН
-          </Button>
-          <Button variant="outline" size="sm">
-            За ДЗО/БЮ
-          </Button>
-          <Button variant="outline" size="sm">
-            Документы
-          </Button>
         </div>
 
         {/* Compliance Matrix */}
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-sm text-foreground">
-              Свод по функции "ЧК; Закупки; ИТ; Кибербезопасность; Комплаенс; Корп.управление; Маркетинг; Опер.расходы; Финансы"
-            </CardTitle>
-          </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">

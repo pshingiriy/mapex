@@ -23,13 +23,13 @@ const Index = () => {
                 title="Выручка"
                 value="644"
                 change={-34.7}
-                subtitle="vs План БИУ'25"
+                subtitle="Факт vs План"
               />
               <MetricCard
                 title="EBITDA"
                 value="635"
                 change={7.6}
-                subtitle="vs План БИУ'25"
+                subtitle="Факт vs План"
               />
             </div>
             

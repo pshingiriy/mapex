@@ -37,18 +37,16 @@ export const FinancialNav = () => {
                 className={`text-xs ${location.pathname === '/inorganic' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => navigate('/inorganic')}
               >
-                InOrganic
+                НеОрганик
               </Button>
-              <Badge variant="secondary" className="bg-primary text-primary-foreground">
-                15 дек 18:28
-              </Badge>
-              <Button variant="default" size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
-                Далее
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`text-xs ${location.pathname === '/corporate-standards' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => navigate('/corporate-standards')}
+              >
+                Корп.Стандарты
               </Button>
-              <Button variant="ghost" size="sm" className="text-xs">
-                Принято
-              </Button>
-              <span className="text-xs text-muted-foreground">БИУ'25</span>
             </div>
           </div>
           

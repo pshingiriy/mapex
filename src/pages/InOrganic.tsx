@@ -5,12 +5,12 @@ import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
 import { ChevronDown } from "lucide-react";
 
-const NonOrganic = () => {
+const InOrganic = () => {
   const [withAdjustments, setWithAdjustments] = useState<boolean>(true);
 
   const keyMetrics = [
     { 
-      title: "Closed deals", 
+      title: "Закрытые сделки", 
       value: "14", 
       change: "+1.02%",
       trend: [
@@ -22,9 +22,9 @@ const NonOrganic = () => {
       ]
     },
     { 
-      title: "Sum of closed deals", 
+      title: "Сумма закрытых сделок", 
       value: "48.6", 
-      unit: "bln ₽",
+      unit: "млрд ₽",
       change: "+1.2%",
       trend: [
         { x: 0, y: 40 },
@@ -35,9 +35,9 @@ const NonOrganic = () => {
       ]
     },
     { 
-      title: "Revenue of acquired companies", 
+      title: "Выручка приобретенных компаний", 
       value: "36", 
-      unit: "bln ₽",
+      unit: "млрд ₽",
       change: "+1.5%",
       trend: [
         { x: 0, y: 30 },
@@ -48,9 +48,9 @@ const NonOrganic = () => {
       ]
     },
     { 
-      title: "OIBDA of acquired companies", 
+      title: "OIBDA приобретенных компаний", 
       value: "10", 
-      unit: "bln ₽",
+      unit: "млрд ₽",
       change: "+1.8%",
       trend: [
         { x: 0, y: 8 },
@@ -61,9 +61,9 @@ const NonOrganic = () => {
       ]
     },
     { 
-      title: "FCF of acquired companies", 
+      title: "FCF приобретенных компаний", 
       value: "36", 
-      unit: "bln ₽",
+      unit: "млрд ₽",
       change: "+1.8%",
       trend: [
         { x: 0, y: 30 },
@@ -90,25 +90,25 @@ const NonOrganic = () => {
 
   const pieChartData = [
     { name: "B2C/B2B", value: 18, color: "hsl(280, 100%, 50%)" },
-    { name: "Segment 1", value: 33, color: "hsl(260, 100%, 60%)" },
-    { name: "Segment 2", value: 10, color: "hsl(40, 100%, 50%)" },
-    { name: "Segment 3", value: 12, color: "hsl(30, 100%, 60%)" },
-    { name: "Segment 4", value: 6, color: "hsl(10, 100%, 50%)" },
-    { name: "Segment 5", value: 8, color: "hsl(0, 80%, 50%)" },
-    { name: "Console", value: 18, color: "hsl(340, 70%, 40%)" },
-    { name: "CC", value: 15, color: "hsl(200, 70%, 50%)" },
-    { name: "Segment 6", value: 15, color: "hsl(180, 60%, 40%)" },
-    { name: "Other", value: 2, color: "hsl(0, 0%, 60%)" },
+    { name: "Сегмент 1", value: 33, color: "hsl(260, 100%, 60%)" },
+    { name: "Сегмент 2", value: 10, color: "hsl(40, 100%, 50%)" },
+    { name: "Сегмент 3", value: 12, color: "hsl(30, 100%, 60%)" },
+    { name: "Сегмент 4", value: 6, color: "hsl(10, 100%, 50%)" },
+    { name: "Сегмент 5", value: 8, color: "hsl(0, 80%, 50%)" },
+    { name: "Консолид.", value: 18, color: "hsl(340, 70%, 40%)" },
+    { name: "КЦ", value: 15, color: "hsl(200, 70%, 50%)" },
+    { name: "Сегмент 6", value: 15, color: "hsl(180, 60%, 40%)" },
+    { name: "Прочее", value: 2, color: "hsl(0, 0%, 60%)" },
   ];
 
   const filterSections = [
-    { label: "mln. rub.", value: "млн. руб." },
-    { label: "Consolidation", value: "Консолидация" },
-    { label: "Segment", value: "Сегмент" },
-    { label: "Cluster", value: "Кластер" },
-    { label: "Company", value: "Компания" },
-    { label: "Indicator", value: "Показатель" },
-    { label: "Curator", value: "Куратор" },
+    { label: "млн. руб.", value: "млн. руб." },
+    { label: "Консолидация", value: "Консолидация" },
+    { label: "Сегмент", value: "Сегмент" },
+    { label: "Кластер", value: "Кластер" },
+    { label: "Компания", value: "Компания" },
+    { label: "Показатель", value: "Показатель" },
+    { label: "Куратор", value: "Куратор" },
   ];
 
   const yearlyData = [
@@ -141,7 +141,7 @@ const NonOrganic = () => {
   const companyData = [
     { 
       id: 1, 
-      name: "Company 1", 
+      name: "Компания 1",
       revenuePlan: 94,
       revenueFact: 126,
       revenueExecution: 135,
@@ -154,7 +154,7 @@ const NonOrganic = () => {
     },
     { 
       id: 2, 
-      name: "Company 2", 
+      name: "Компания 2",
       revenuePlan: 481,
       revenueFact: null,
       revenueExecution: 0,
@@ -167,7 +167,7 @@ const NonOrganic = () => {
     },
     { 
       id: 3, 
-      name: "Company 3", 
+      name: "Компания 3",
       revenuePlan: 347,
       revenueFact: 160,
       revenueExecution: 46,
@@ -180,7 +180,7 @@ const NonOrganic = () => {
     },
     { 
       id: 4, 
-      name: "Company 4", 
+      name: "Компания 4",
       revenuePlan: 46,
       revenueFact: 12,
       revenueExecution: 26,
@@ -193,7 +193,7 @@ const NonOrganic = () => {
     },
     { 
       id: 5, 
-      name: "Company 5", 
+      name: "Компания 5",
       revenuePlan: 260,
       revenueFact: 193,
       revenueExecution: 74,
@@ -206,7 +206,7 @@ const NonOrganic = () => {
     },
     { 
       id: 6, 
-      name: "Company 6", 
+      name: "Компания 6",
       revenuePlan: 0,
       revenueFact: null,
       revenueExecution: null,
@@ -237,7 +237,7 @@ const NonOrganic = () => {
       
       <main className="container mx-auto px-6 py-6 animate-fade-in">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Non-organic growth dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Панель неорганического роста</h1>
         </div>
 
         {/* Top Section: Pie Chart + Metric Cards */}
@@ -265,7 +265,7 @@ const NonOrganic = () => {
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <div className="text-4xl font-bold text-foreground">137</div>
-                  <div className="text-xs text-muted-foreground text-center px-4">Projects in funnel<br />2024</div>
+                  <div className="text-xs text-muted-foreground text-center px-4">Проектов в воронке<br />2024</div>
                 </div>
               </div>
               {/* Legend */}
@@ -291,7 +291,7 @@ const NonOrganic = () => {
                     {metric.unit && <div className="text-sm text-muted-foreground">{metric.unit}</div>}
                     <div className="text-sm text-success ml-2">{metric.change}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground mb-2">vs previous period</div>
+                  <div className="text-xs text-muted-foreground mb-2">к предыдущему периоду</div>
                   <ResponsiveContainer width="100%" height={40}>
                     <LineChart data={metric.trend}>
                       <Line 
@@ -322,7 +322,7 @@ const NonOrganic = () => {
                     {metric.unit && <div className="text-sm text-muted-foreground">{metric.unit}</div>}
                     <div className="text-sm text-success ml-2">{metric.change}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground mb-2">vs previous period</div>
+                  <div className="text-xs text-muted-foreground mb-2">к предыдущему периоду</div>
                   <ResponsiveContainer width="100%" height={40}>
                     <LineChart data={metric.trend}>
                       <Line 
@@ -344,7 +344,7 @@ const NonOrganic = () => {
                   <div className="text-3xl font-bold text-primary">{evEbitdaMetric.value}</div>
                   <div className="text-sm text-success ml-2">{evEbitdaMetric.change}</div>
                 </div>
-                <div className="text-xs text-muted-foreground mb-2">vs previous period</div>
+                <div className="text-xs text-muted-foreground mb-2">к предыдущему периоду</div>
                 <ResponsiveContainer width="100%" height={40}>
                   <LineChart data={evEbitdaMetric.trend}>
                     <Line 
@@ -378,7 +378,7 @@ const NonOrganic = () => {
           {/* Bar Chart */}
           <Card className="lg:col-span-7 bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-sm text-foreground">Contribution of inorganic to subsidiary revenue</CardTitle>
+              <CardTitle className="text-sm text-foreground">Вклад неорганики в выручку дочерних компаний</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
@@ -398,7 +398,7 @@ const NonOrganic = () => {
                     wrapperStyle={{ color: 'hsl(var(--foreground))' }}
                     formatter={(value) => (
                       <span className="text-foreground text-xs">
-                        {value === 'inorganic' ? 'Inorganic contribution' : value === 'organic' ? 'Organic' : value}
+                        {value === 'inorganic' ? 'Неорганический вклад' : value === 'organic' ? 'Органический' : value}
                       </span>
                     )}
                   />
@@ -412,7 +412,7 @@ const NonOrganic = () => {
           {/* Right Side - Toggle Buttons */}
           <div className="lg:col-span-3 flex flex-col items-end gap-4">
             <div className="w-full max-w-xs">
-              <div className="text-sm text-muted-foreground mb-2 italic">Preset</div>
+              <div className="text-sm text-muted-foreground mb-2 italic">Пресет</div>
               <div className="flex flex-col gap-2">
                 <Button
                   variant={withAdjustments ? "default" : "outline"}
@@ -420,7 +420,7 @@ const NonOrganic = () => {
                   onClick={() => setWithAdjustments(true)}
                   className="w-full justify-center"
                 >
-                  With adjustments
+                  С корректировками
                 </Button>
                 <Button
                   variant={!withAdjustments ? "default" : "outline"}
@@ -428,11 +428,11 @@ const NonOrganic = () => {
                   onClick={() => setWithAdjustments(false)}
                   className="w-full justify-center"
                 >
-                  Without adjustments
+                  Без корректировок
                 </Button>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground italic">Rating?</div>
+            <div className="text-sm text-muted-foreground italic">Рейтинг?</div>
           </div>
         </div>
 
@@ -440,7 +440,7 @@ const NonOrganic = () => {
         <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-foreground text-base">
-              Asset results for 8th month 2025, in mln rub.
+              Результаты активов за 8 месяцев 2025, в млн руб.
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -452,36 +452,36 @@ const NonOrganic = () => {
                       № п/п
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground border border-border">
-                      Company
+                      Компания
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" colSpan={2}>
-                      Revenue
+                      Выручка
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" rowSpan={2}>
-                      Execution
+                      Исполнение
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" colSpan={2}>
                       OIBDA
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" rowSpan={2}>
-                      Execution
+                      Исполнение
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" colSpan={2}>
                       FCF
                     </th>
                     <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" rowSpan={2}>
-                      Execution
+                      Исполнение
                     </th>
                   </tr>
                   <tr className="bg-table-header">
                     <th className="border border-border"></th>
                     <th className="border border-border"></th>
-                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Plan</th>
-                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Fact</th>
-                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Plan</th>
-                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Fact</th>
-                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Plan</th>
-                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Fact</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">План</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Факт</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">План</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Факт</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">План</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Факт</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,4 +526,4 @@ const NonOrganic = () => {
   );
 };
 
-export default NonOrganic;
+export default InOrganic;

@@ -1,112 +1,234 @@
 import { FinancialNav } from "@/components/FinancialNav";
-import { MetricCard } from "@/components/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from "recharts";
+import { ChevronDown } from "lucide-react";
 
 const NonOrganic = () => {
-  const [selectedSegment, setSelectedSegment] = useState<string>("all");
-  const [selectedYear, setSelectedYear] = useState<string>("2025");
   const [withAdjustments, setWithAdjustments] = useState<boolean>(true);
 
   const keyMetrics = [
-    { title: "Закрытые сделки", value: "45", change: 1.02 },
-    { title: "Сумма закрытых сделок", value: "48.6 млрд ₽", change: 1.2 },
-    { title: "Выручка приобретенных компаний", value: "36 млрд ₽", change: 1.5 },
-    { title: "OIBDA приобретенных компаний", value: "10 млрд ₽", change: 1.8 },
-    { title: "FCF приобретенных компаний", value: "36 млрд ₽", change: 1.8 },
+    { 
+      title: "Closed deals", 
+      value: "14", 
+      change: "+1.02%",
+      trend: [
+        { x: 0, y: 20 },
+        { x: 1, y: 25 },
+        { x: 2, y: 22 },
+        { x: 3, y: 28 },
+        { x: 4, y: 30 }
+      ]
+    },
+    { 
+      title: "Sum of closed deals", 
+      value: "48.6", 
+      unit: "bln ₽",
+      change: "+1.2%",
+      trend: [
+        { x: 0, y: 40 },
+        { x: 1, y: 42 },
+        { x: 2, y: 41 },
+        { x: 3, y: 45 },
+        { x: 4, y: 48.6 }
+      ]
+    },
+    { 
+      title: "Revenue of acquired companies", 
+      value: "36", 
+      unit: "bln ₽",
+      change: "+1.5%",
+      trend: [
+        { x: 0, y: 30 },
+        { x: 1, y: 32 },
+        { x: 2, y: 33 },
+        { x: 3, y: 34 },
+        { x: 4, y: 36 }
+      ]
+    },
+    { 
+      title: "OIBDA of acquired companies", 
+      value: "10", 
+      unit: "bln ₽",
+      change: "+1.8%",
+      trend: [
+        { x: 0, y: 8 },
+        { x: 1, y: 8.5 },
+        { x: 2, y: 9 },
+        { x: 3, y: 9.5 },
+        { x: 4, y: 10 }
+      ]
+    },
+    { 
+      title: "FCF of acquired companies", 
+      value: "36", 
+      unit: "bln ₽",
+      change: "+1.8%",
+      trend: [
+        { x: 0, y: 30 },
+        { x: 1, y: 32 },
+        { x: 2, y: 33 },
+        { x: 3, y: 34.5 },
+        { x: 4, y: 36 }
+      ]
+    },
   ];
 
-  const segments = [
-    { id: "all", name: "Все", count: 137 },
-    { id: "solar", name: "Солар", count: 33 },
-    { id: "xtech", name: "X.Tech", count: 53 },
-    { id: "bit", name: "БИТ", count: 6 },
-    { id: "gostech", name: "ГосТех", count: 8 },
-    { id: "chd", name: "ЦХД", count: 15 },
-    { id: "other", name: "Прочие", count: 22 },
+  const evEbitdaMetric = {
+    title: "EV/EBITDA",
+    value: "4.6",
+    change: "+1.9%",
+    trend: [
+      { x: 0, y: 4.0 },
+      { x: 1, y: 4.2 },
+      { x: 2, y: 4.3 },
+      { x: 3, y: 4.5 },
+      { x: 4, y: 4.6 }
+    ]
+  };
+
+  const pieChartData = [
+    { name: "B2C/B2B", value: 18, color: "hsl(280, 100%, 50%)" },
+    { name: "Segment 1", value: 33, color: "hsl(260, 100%, 60%)" },
+    { name: "Segment 2", value: 10, color: "hsl(40, 100%, 50%)" },
+    { name: "Segment 3", value: 12, color: "hsl(30, 100%, 60%)" },
+    { name: "Segment 4", value: 6, color: "hsl(10, 100%, 50%)" },
+    { name: "Segment 5", value: 8, color: "hsl(0, 80%, 50%)" },
+    { name: "Console", value: 18, color: "hsl(340, 70%, 40%)" },
+    { name: "CC", value: 15, color: "hsl(200, 70%, 50%)" },
+    { name: "Segment 6", value: 15, color: "hsl(180, 60%, 40%)" },
+    { name: "Other", value: 2, color: "hsl(0, 0%, 60%)" },
+  ];
+
+  const filterSections = [
+    { label: "mln. rub.", value: "млн. руб." },
+    { label: "Consolidation", value: "Консолидация" },
+    { label: "Segment", value: "Сегмент" },
+    { label: "Cluster", value: "Кластер" },
+    { label: "Company", value: "Компания" },
+    { label: "Indicator", value: "Показатель" },
+    { label: "Curator", value: "Куратор" },
+  ];
+
+  const yearlyData = [
+    { 
+      year: "2022", 
+      organic: 70, 
+      inorganic: 15,
+      total: 85
+    },
+    { 
+      year: "2023", 
+      organic: 85, 
+      inorganic: 25,
+      total: 110
+    },
+    { 
+      year: "2024", 
+      organic: 125, 
+      inorganic: 55,
+      total: 180
+    },
+    { 
+      year: "2025", 
+      organic: 90, 
+      inorganic: 40,
+      total: 130
+    },
   ];
 
   const companyData = [
     { 
       id: 1, 
       name: "Company 1", 
-      revenue: { plan: 126, fact: 94, execution: 135 },
-      oibda: { plan: 10, fact: 18, execution: 181 },
-      fcf: { plan: 11, fact: 14, execution: 134 }
+      revenuePlan: 94,
+      revenueFact: 126,
+      revenueExecution: 135,
+      oibdaPlan: 10,
+      oibdaFact: 18,
+      oibdaExecution: 181,
+      fcfPlan: 11,
+      fcfFact: 14,
+      fcfExecution: 154
     },
     { 
       id: 2, 
       name: "Company 2", 
-      revenue: { plan: null, fact: 481, execution: 0 },
-      oibda: { plan: 284, fact: -8, execution: 3 },
-      fcf: { plan: 283, fact: -16, execution: 6 }
+      revenuePlan: 481,
+      revenueFact: null,
+      revenueExecution: 0,
+      oibdaPlan: 284,
+      oibdaFact: -8,
+      oibdaExecution: 3,
+      fcfPlan: 283,
+      fcfFact: -16,
+      fcfExecution: 6
     },
     { 
       id: 3, 
       name: "Company 3", 
-      revenue: { plan: 160, fact: 347, execution: 46 },
-      oibda: { plan: 1, fact: -76, execution: 8 },
-      fcf: { plan: 475, fact: 23, execution: 745 }
+      revenuePlan: 347,
+      revenueFact: 160,
+      revenueExecution: 46,
+      oibdaPlan: 1,
+      oibdaFact: -76,
+      oibdaExecution: 8.473,
+      fcfPlan: 23,
+      fcfFact: -170,
+      fcfExecution: 745
     },
     { 
       id: 4, 
       name: "Company 4", 
-      revenue: { plan: 12, fact: 46, execution: 25 },
-      oibda: { plan: -113, fact: -59, execution: 191 },
-      fcf: { plan: -56, fact: -90, execution: 62 }
+      revenuePlan: 46,
+      revenueFact: 12,
+      revenueExecution: 26,
+      oibdaPlan: -113,
+      oibdaFact: -59,
+      oibdaExecution: 191,
+      fcfPlan: -56,
+      fcfFact: -90,
+      fcfExecution: 62
     },
     { 
       id: 5, 
       name: "Company 5", 
-      revenue: { plan: 193, fact: 260, execution: 74 },
-      oibda: { plan: -1, fact: -1, execution: 63 },
-      fcf: { plan: -1, fact: -1, execution: 56 }
+      revenuePlan: 260,
+      revenueFact: 193,
+      revenueExecution: 74,
+      oibdaPlan: -1,
+      oibdaFact: -1,
+      oibdaExecution: 63,
+      fcfPlan: -1,
+      fcfFact: -1,
+      fcfExecution: 56
     },
     { 
       id: 6, 
       name: "Company 6", 
-      revenue: { plan: null, fact: 0, execution: null },
-      oibda: { plan: 99, fact: 58, execution: 58 },
-      fcf: { plan: -206, fact: -78, execution: 265 }
+      revenuePlan: 0,
+      revenueFact: null,
+      revenueExecution: null,
+      oibdaPlan: 99,
+      oibdaFact: 58,
+      oibdaExecution: 58,
+      fcfPlan: -206,
+      fcfFact: -78,
+      fcfExecution: 265
     },
   ];
 
-  // Chart data
-  const funnelData = [
-    { name: "Консоль", value: 18 },
-    { name: "КЦ", value: 13 },
-  ];
-
-  const revenueContributionData = [
-    { name: "Неорганика", value: 4.6 },
-    { name: "Органика", value: 95.4 },
-  ];
-
-  const evEbitdaData = [
-    { segment: "Солар", multiple: 6.2 },
-    { segment: "X.Tech", multiple: 8.5 },
-    { segment: "БИТ", multiple: 5.8 },
-    { segment: "ГосТех", multiple: 7.3 },
-    { segment: "ЦХД", multiple: 4.6 },
-  ];
-
-  const quarterlyDealsData = [
-    { quarter: "Q1 2024", deals: 8, amount: 10.2 },
-    { quarter: "Q2 2024", deals: 12, amount: 15.8 },
-    { quarter: "Q3 2024", deals: 11, amount: 12.4 },
-    { quarter: "Q4 2024", deals: 14, amount: 10.2 },
-  ];
-
-  const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
-
   const getExecutionColor = (execution: number | null) => {
+    if (execution === null) return "bg-muted/50";
+    if (execution >= 100) return "bg-emerald-500/80";
+    if (execution >= 50) return "bg-orange-500/60";
+    return "bg-red-500/70";
+  };
+
+  const getExecutionTextColor = (execution: number | null) => {
     if (execution === null) return "text-muted-foreground";
-    if (execution >= 100) return "text-success";
-    if (execution >= 50) return "text-foreground";
-    return "text-destructive";
+    return "text-white";
   };
 
   return (
@@ -115,186 +237,155 @@ const NonOrganic = () => {
       
       <main className="container mx-auto px-6 py-6 animate-fade-in">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Дашборд неорганического роста</h1>
-          <p className="text-sm text-muted-foreground">M&A активность и результаты приобретенных компаний</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Non-organic growth dashboard</h1>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-          {keyMetrics.map((metric, index) => (
-            <MetricCard
-              key={index}
-              title={metric.title}
-              value={metric.value}
-              change={metric.change}
-            />
-          ))}
-        </div>
+        {/* Top Section: Pie Chart + Metric Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+          {/* Pie Chart */}
+          <Card className="lg:col-span-3 bg-card border-border">
+            <CardContent className="pt-6">
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={pieChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={1}
+                      dataKey="value"
+                    >
+                      {pieChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="text-4xl font-bold text-foreground">137</div>
+                  <div className="text-xs text-muted-foreground text-center px-4">Projects in funnel<br />2024</div>
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-1 mt-4 text-xs">
+                {pieChartData.map((item, index) => (
+                  <div key={index} className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: item.color }}></div>
+                    <span className="text-muted-foreground truncate">{item.name}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Сегмент:</span>
-            <div className="flex flex-wrap gap-2">
-              {segments.map((segment) => (
-                <Button
-                  key={segment.id}
-                  variant={selectedSegment === segment.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedSegment(segment.id)}
-                  className="h-8 text-xs"
-                >
-                  {segment.name}
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    {segment.count}
-                  </Badge>
-                </Button>
-              ))}
-            </div>
+          {/* Metric Cards - Top Row */}
+          <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {keyMetrics.slice(0, 3).map((metric, index) => (
+              <Card key={index} className="bg-card border-border">
+                <CardContent className="pt-6">
+                  <div className="text-xs text-muted-foreground mb-2">{metric.title}</div>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <div className="text-3xl font-bold text-primary">{metric.value}</div>
+                    {metric.unit && <div className="text-sm text-muted-foreground">{metric.unit}</div>}
+                    <div className="text-sm text-success ml-2">{metric.change}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2">vs previous period</div>
+                  <ResponsiveContainer width="100%" height={40}>
+                    <LineChart data={metric.trend}>
+                      <Line 
+                        type="monotone" 
+                        dataKey="y" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Период:</span>
-            <div className="flex gap-2">
-              {["2022", "2023", "2024", "2025"].map((year) => (
-                <Button
-                  key={year}
-                  variant={selectedYear === year ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedYear(year)}
-                  className="h-8 text-xs"
-                >
-                  {year}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={withAdjustments ? "default" : "outline"}
-              size="sm"
-              onClick={() => setWithAdjustments(true)}
-              className="h-8 text-xs"
-            >
-              С корректировками
-            </Button>
-            <Button
-              variant={!withAdjustments ? "default" : "outline"}
-              size="sm"
-              onClick={() => setWithAdjustments(false)}
-              className="h-8 text-xs"
-            >
-              Без корректировок
-            </Button>
+        {/* Second Row: OIBDA, FCF + EV/EBITDA */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+          <div className="lg:col-span-3"></div>
+          <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {keyMetrics.slice(3, 5).map((metric, index) => (
+              <Card key={index} className="bg-card border-border">
+                <CardContent className="pt-6">
+                  <div className="text-xs text-muted-foreground mb-2">{metric.title}</div>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <div className="text-3xl font-bold text-primary">{metric.value}</div>
+                    {metric.unit && <div className="text-sm text-muted-foreground">{metric.unit}</div>}
+                    <div className="text-sm text-success ml-2">{metric.change}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2">vs previous period</div>
+                  <ResponsiveContainer width="100%" height={40}>
+                    <LineChart data={metric.trend}>
+                      <Line 
+                        type="monotone" 
+                        dataKey="y" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            ))}
+            <Card className="bg-card border-border">
+              <CardContent className="pt-6">
+                <div className="text-xs text-muted-foreground mb-2">{evEbitdaMetric.title}</div>
+                <div className="flex items-baseline gap-1 mb-1">
+                  <div className="text-3xl font-bold text-primary">{evEbitdaMetric.value}</div>
+                  <div className="text-sm text-success ml-2">{evEbitdaMetric.change}</div>
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">vs previous period</div>
+                <ResponsiveContainer width="100%" height={40}>
+                  <LineChart data={evEbitdaMetric.trend}>
+                    <Line 
+                      type="monotone" 
+                      dataKey="y" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Projects in Funnel */}
-          <Card className="bg-card border-border">
+        {/* Middle Section: Filters + Bar Chart + Toggle */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+          {/* Left Sidebar Filters */}
+          <div className="lg:col-span-2 space-y-2">
+            {filterSections.map((filter, index) => (
+              <Card key={index} className="bg-card border-border cursor-pointer hover:bg-card/80 transition-colors">
+                <CardContent className="p-3 flex items-center justify-between">
+                  <span className="text-sm text-foreground italic">{filter.label}</span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Bar Chart */}
+          <Card className="lg:col-span-7 bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-foreground text-base">Проектов в воронке 2024 г.</CardTitle>
+              <CardTitle className="text-sm text-foreground">Contribution of inorganic to subsidiary revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={funnelData}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={yearlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      color: 'hsl(var(--foreground))'
-                    }} 
-                  />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Revenue Contribution */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground text-base">Вклад неорганики в выручку ДЗО</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center">
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={revenueContributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {revenueContributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      color: 'hsl(var(--foreground))'
-                    }} 
-                    formatter={(value: number) => `${value}%`}
-                  />
-                  <Legend 
-                    wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* EV/EBITDA Multiples */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground text-base">EV/EBITDA по сегментам</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={evEbitdaData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="segment" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                      color: 'hsl(var(--foreground))'
-                    }} 
-                    formatter={(value: number) => `${value}x`}
-                  />
-                  <Bar dataKey="multiple" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Quarterly Deals Trend */}
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-foreground text-base">Динамика закрытых сделок</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={quarterlyDealsData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="quarter" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))', 
@@ -305,85 +396,123 @@ const NonOrganic = () => {
                   />
                   <Legend 
                     wrapperStyle={{ color: 'hsl(var(--foreground))' }}
-                    formatter={(value) => <span className="text-foreground text-sm">{value === 'deals' ? 'Сделки' : 'Сумма (млрд ₽)'}</span>}
+                    formatter={(value) => (
+                      <span className="text-foreground text-xs">
+                        {value === 'inorganic' ? 'Inorganic contribution' : value === 'organic' ? 'Organic' : value}
+                      </span>
+                    )}
                   />
-                  <Line yAxisId="left" type="monotone" dataKey="deals" stroke="hsl(var(--primary))" strokeWidth={2} />
-                  <Line yAxisId="right" type="monotone" dataKey="amount" stroke="hsl(var(--chart-3))" strokeWidth={2} />
-                </LineChart>
+                  <Bar dataKey="inorganic" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="organic" stackId="a" fill="hsl(170, 60%, 50%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {/* Right Side - Toggle Buttons */}
+          <div className="lg:col-span-3 flex flex-col items-end gap-4">
+            <div className="w-full max-w-xs">
+              <div className="text-sm text-muted-foreground mb-2 italic">Preset</div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant={withAdjustments ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWithAdjustments(true)}
+                  className="w-full justify-center"
+                >
+                  With adjustments
+                </Button>
+                <Button
+                  variant={!withAdjustments ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setWithAdjustments(false)}
+                  className="w-full justify-center"
+                >
+                  Without adjustments
+                </Button>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground italic">Rating?</div>
+          </div>
         </div>
 
         {/* Results Table */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-foreground text-lg">
-              Результаты активов за 8-й мес. 2025 г., в млн руб.
+            <CardTitle className="text-foreground text-base">
+              Asset results for 8th month 2025, in mln rub.
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-table-header">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground border border-border">
                       № п/п
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Компания
+                    <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground border border-border">
+                      Company
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider" colSpan={3}>
-                      Выручка
+                    <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" colSpan={2}>
+                      Revenue
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider" colSpan={3}>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" rowSpan={2}>
+                      Execution
+                    </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" colSpan={2}>
                       OIBDA
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider" colSpan={3}>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" rowSpan={2}>
+                      Execution
+                    </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" colSpan={2}>
                       FCF
                     </th>
+                    <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground border border-border" rowSpan={2}>
+                      Execution
+                    </th>
                   </tr>
-                  <tr className="bg-table-header border-t border-border/50">
-                    <th className="px-4 py-2"></th>
-                    <th className="px-4 py-2"></th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">План</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">Факт</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">Исп-е</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">План</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">Факт</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">Исп-е</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">План</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">Факт</th>
-                    <th className="px-4 py-2 text-right text-xs text-muted-foreground">Исп-е</th>
+                  <tr className="bg-table-header">
+                    <th className="border border-border"></th>
+                    <th className="border border-border"></th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Plan</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Fact</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Plan</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Fact</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Plan</th>
+                    <th className="px-3 py-1 text-center text-xs text-muted-foreground border border-border">Fact</th>
                   </tr>
                 </thead>
                 <tbody>
                   {companyData.map((company) => (
-                    <tr key={company.id} className="bg-table-row hover:bg-table-hover transition-colors border-t border-border">
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{company.id}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-foreground">{company.name}</td>
+                    <tr key={company.id} className="hover:bg-table-hover transition-colors">
+                      <td className="px-3 py-2 text-sm text-center text-muted-foreground border border-border">{company.id}</td>
+                      <td className="px-3 py-2 text-sm font-medium text-foreground border border-border">{company.name}</td>
                       
                       {/* Revenue */}
-                      <td className="px-4 py-3 text-sm text-right text-foreground">
-                        {company.revenue.plan !== null ? company.revenue.plan : "N/A"}
+                      <td className="px-3 py-2 text-sm text-center text-foreground border border-border">
+                        {company.revenuePlan}
                       </td>
-                      <td className="px-4 py-3 text-sm text-right text-foreground">{company.revenue.fact}</td>
-                      <td className={`px-4 py-3 text-sm text-right font-medium ${getExecutionColor(company.revenue.execution)}`}>
-                        {company.revenue.execution !== null ? `${company.revenue.execution}%` : "N/A"}
+                      <td className="px-3 py-2 text-sm text-center text-foreground border border-border">
+                        {company.revenueFact !== null ? company.revenueFact : "N/A"}
+                      </td>
+                      <td className={`px-3 py-2 text-sm text-center font-medium border border-border ${getExecutionColor(company.revenueExecution)} ${getExecutionTextColor(company.revenueExecution)}`}>
+                        {company.revenueExecution !== null && company.revenueExecution > 0 ? `${company.revenueExecution}%` : "N/A"}
                       </td>
                       
                       {/* OIBDA */}
-                      <td className="px-4 py-3 text-sm text-right text-foreground">{company.oibda.plan}</td>
-                      <td className="px-4 py-3 text-sm text-right text-foreground">{company.oibda.fact}</td>
-                      <td className={`px-4 py-3 text-sm text-right font-medium ${getExecutionColor(company.oibda.execution)}`}>
-                        {company.oibda.execution}%
+                      <td className="px-3 py-2 text-sm text-center text-foreground border border-border">{company.oibdaPlan}</td>
+                      <td className="px-3 py-2 text-sm text-center text-foreground border border-border">{company.oibdaFact}</td>
+                      <td className={`px-3 py-2 text-sm text-center font-medium border border-border ${getExecutionColor(company.oibdaExecution)} ${getExecutionTextColor(company.oibdaExecution)}`}>
+                        {typeof company.oibdaExecution === 'number' ? `${company.oibdaExecution}%` : company.oibdaExecution}
                       </td>
                       
                       {/* FCF */}
-                      <td className="px-4 py-3 text-sm text-right text-foreground">{company.fcf.plan}</td>
-                      <td className="px-4 py-3 text-sm text-right text-foreground">{company.fcf.fact}</td>
-                      <td className={`px-4 py-3 text-sm text-right font-medium ${getExecutionColor(company.fcf.execution)}`}>
-                        {company.fcf.execution}%
+                      <td className="px-3 py-2 text-sm text-center text-foreground border border-border">{company.fcfPlan}</td>
+                      <td className="px-3 py-2 text-sm text-center text-foreground border border-border">{company.fcfFact}</td>
+                      <td className={`px-3 py-2 text-sm text-center font-medium border border-border ${getExecutionColor(company.fcfExecution)} ${getExecutionTextColor(company.fcfExecution)}`}>
+                        {company.fcfExecution}%
                       </td>
                     </tr>
                   ))}

@@ -1,6 +1,16 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useCallback } from 'react';
+import ReactFlow, {
+  Node,
+  Edge,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  MarkerType,
+  Panel,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
 
 interface Company {
   id: string;
@@ -11,124 +21,147 @@ interface Company {
 
 const organizationData: Company = {
   id: '1',
-  name: 'Parent Company',
+  name: 'Holding Company',
   ownership: '',
   children: [
-    {
-      id: '2',
-      name: 'Sub Company 1',
-      ownership: '100%',
-      children: [
-        { id: '2-1', name: 'Company 1', ownership: '85.5%' },
-        { id: '2-2', name: 'Company 2', ownership: '92.3%' },
-        { id: '2-3', name: 'Company 3', ownership: '67.8%' },
-      ],
-    },
-    {
-      id: '3',
-      name: 'Sub Company 2',
-      ownership: '100%',
-      children: [
-        { id: '3-1', name: 'Company 4', ownership: '75.2%' },
-        { id: '3-2', name: 'Company 5', ownership: '88.9%' },
-        { id: '3-3', name: 'Company 6', ownership: '95.1%' },
-        { id: '3-4', name: 'Company 7', ownership: '61.4%' },
-      ],
-    },
-    {
-      id: '4',
-      name: 'Sub Company 3',
-      ownership: '100%',
-      children: [
-        { id: '4-1', name: 'Company 8', ownership: '73.6%' },
-        { id: '4-2', name: 'Company 9', ownership: '82.7%' },
-        { id: '4-3', name: 'Company 10', ownership: '90.5%' },
-      ],
-    },
+    { id: '2', name: 'Sub Company 1', ownership: '100%' },
+    { id: '3', name: 'Sub Company 2', ownership: '100%' },
+    { id: '4', name: 'Sub Company 3', ownership: '100%' },
   ],
 };
 
-interface TreeNodeProps {
-  company: Company;
-  level: number;
-  isLast?: boolean;
-}
-
-const TreeNode = ({ company, level, isLast }: TreeNodeProps) => {
-  const [isOpen, setIsOpen] = useState(level === 0);
-  const hasChildren = company.children && company.children.length > 0;
-
+// Custom node component
+const CustomNode = ({ data }: any) => {
   return (
     <div className="relative">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-start gap-2">
-          {level > 0 && (
-            <div className="flex items-center pt-6">
-              <div className="w-12 border-t border-dashed border-muted-foreground/40" />
-            </div>
-          )}
-          
-          <div className="flex-1">
-            <CollapsibleTrigger asChild>
-              <div
-                className={`
-                  px-6 py-4 rounded-lg border-2 backdrop-blur-sm cursor-pointer
-                  transition-all duration-200 hover:border-primary/50
-                  ${level === 0 ? 'bg-primary/20 border-primary/50' : 'bg-secondary/30 border-border'}
-                  ${hasChildren ? 'hover:bg-secondary/40' : ''}
-                `}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    {hasChildren && (
-                      <div className="text-muted-foreground">
-                        {isOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-sm font-semibold text-foreground">{company.name}</div>
-                      {company.ownership && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Ownership: {company.ownership}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {hasChildren && (
-                    <div className="text-xs text-muted-foreground">
-                      {company.children!.length} {company.children!.length === 1 ? 'subsidiary' : 'subsidiaries'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CollapsibleTrigger>
-
-            {hasChildren && (
-              <CollapsibleContent>
-                <div className="ml-8 mt-4 space-y-3 relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-px border-l border-dashed border-muted-foreground/40" />
-                  {company.children!.map((child, index) => (
-                    <TreeNode
-                      key={child.id}
-                      company={child}
-                      level={level + 1}
-                      isLast={index === company.children!.length - 1}
-                    />
-                  ))}
-                </div>
-              </CollapsibleContent>
-            )}
+      {data.ownership && (
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-muted-foreground font-medium">
+          {data.ownership}
+        </div>
+      )}
+      <div
+        className={`
+          px-8 py-4 rounded-xl border-2 backdrop-blur-sm
+          transition-all duration-200
+          ${data.isParent 
+            ? 'bg-primary/20 border-primary/50 shadow-lg shadow-primary/20' 
+            : 'bg-secondary/30 border-border shadow-md'
+          }
+          hover:border-primary/50 hover:shadow-lg
+          min-w-[180px]
+        `}
+      >
+        <div className="text-center">
+          <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+            {data.label}
           </div>
         </div>
-      </Collapsible>
+      </div>
     </div>
   );
 };
 
+const nodeTypes = {
+  custom: CustomNode,
+};
+
+// Generate nodes and edges from data
+const generateNodesAndEdges = (data: Company) => {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  
+  // Parent node at top center
+  nodes.push({
+    id: data.id,
+    type: 'custom',
+    position: { x: 500, y: 50 },
+    data: { 
+      label: data.name,
+      isParent: true,
+    },
+  });
+
+  // Calculate positions for children (horizontal layout)
+  const children = data.children || [];
+  const childSpacing = 220;
+  const totalWidth = (children.length - 1) * childSpacing;
+  const startX = 500 - totalWidth / 2;
+
+  children.forEach((child, index) => {
+    const xPos = startX + index * childSpacing;
+    
+    nodes.push({
+      id: child.id,
+      type: 'custom',
+      position: { x: xPos, y: 200 },
+      data: { 
+        label: child.name,
+        ownership: child.ownership,
+        isParent: false,
+      },
+    });
+
+    // Add edge from parent to child
+    edges.push({
+      id: `e${data.id}-${child.id}`,
+      source: data.id,
+      target: child.id,
+      type: 'straight',
+      style: { 
+        stroke: 'hsl(var(--muted-foreground))',
+        strokeWidth: 1.5,
+        strokeDasharray: '5,5',
+      },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 15,
+        height: 15,
+        color: 'hsl(var(--muted-foreground))',
+      },
+    });
+  });
+
+  return { nodes, edges };
+};
+
 export const OrganizationTree = () => {
+  const { nodes: initialNodes, edges: initialEdges } = generateNodesAndEdges(organizationData);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+
   return (
-    <div className="w-full bg-dashboard-bg rounded-lg border border-border p-8 overflow-auto max-h-[calc(100vh-180px)]">
-      <TreeNode company={organizationData} level={0} />
+    <div className="w-full h-[calc(100vh-180px)] bg-dashboard-bg rounded-lg border border-border overflow-hidden">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        nodeTypes={nodeTypes}
+        fitView
+        minZoom={0.5}
+        maxZoom={1.5}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background 
+          color="hsl(var(--muted-foreground))" 
+          gap={20} 
+          size={1}
+          style={{ opacity: 0.1 }}
+        />
+        <Controls 
+          className="bg-card border-border"
+        />
+        <MiniMap 
+          className="bg-card border-border"
+          nodeColor={(node) => 
+            node.data.isParent 
+              ? 'hsl(var(--primary))' 
+              : 'hsl(var(--secondary))'
+          }
+          maskColor="hsl(var(--background) / 0.8)"
+        />
+      </ReactFlow>
     </div>
   );
 };

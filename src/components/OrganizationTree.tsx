@@ -1,124 +1,134 @@
-import { useCallback } from 'react';
-import ReactFlow, {
-  Node,
-  Edge,
-  Background,
-  Controls,
-  useNodesState,
-  useEdgesState,
-  MarkerType,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-const initialNodes: Node[] = [
-  {
-    id: '1',
-    data: { label: 'Holding Company', percentage: '100.00%' },
-    position: { x: 400, y: 50 },
-    type: 'custom',
-  },
-  {
-    id: '2',
-    data: { label: 'Company 1', percentage: '(50.00%)' },
-    position: { x: 50, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '3',
-    data: { label: 'Company 2', percentage: '(47.95%)' },
-    position: { x: 220, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '4',
-    data: { label: 'Company 3', percentage: '(5.03%)' },
-    position: { x: 390, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '5',
-    data: { label: 'Company 4', percentage: '(98.48%)' },
-    position: { x: 530, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '6',
-    data: { label: 'Company 5', percentage: '(49.99%)' },
-    position: { x: 680, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '7',
-    data: { label: 'Company 6', percentage: '(99.93%)' },
-    position: { x: 820, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '8',
-    data: { label: 'Company 7', percentage: '(33.33%)' },
-    position: { x: 980, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '9',
-    data: { label: 'Company 8', percentage: '(49.00%)' },
-    position: { x: 1160, y: 200 },
-    type: 'custom',
-  },
-  {
-    id: '10',
-    data: { label: 'Company 9', percentage: '(24.90%)' },
-    position: { x: 1330, y: 200 },
-    type: 'custom',
-  },
-];
+interface Company {
+  id: string;
+  name: string;
+  ownership: string;
+  children?: Company[];
+}
 
-const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-3', source: '1', target: '3', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-4', source: '1', target: '4', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-5', source: '1', target: '5', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-6', source: '1', target: '6', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-7', source: '1', target: '7', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-8', source: '1', target: '8', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-9', source: '1', target: '9', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e1-10', source: '1', target: '10', type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } },
-];
+const organizationData: Company = {
+  id: '1',
+  name: 'Parent Company',
+  ownership: '',
+  children: [
+    {
+      id: '2',
+      name: 'Sub Company 1',
+      ownership: '100%',
+      children: [
+        { id: '2-1', name: 'Company 1', ownership: '85.5%' },
+        { id: '2-2', name: 'Company 2', ownership: '92.3%' },
+        { id: '2-3', name: 'Company 3', ownership: '67.8%' },
+      ],
+    },
+    {
+      id: '3',
+      name: 'Sub Company 2',
+      ownership: '100%',
+      children: [
+        { id: '3-1', name: 'Company 4', ownership: '75.2%' },
+        { id: '3-2', name: 'Company 5', ownership: '88.9%' },
+        { id: '3-3', name: 'Company 6', ownership: '95.1%' },
+        { id: '3-4', name: 'Company 7', ownership: '61.4%' },
+      ],
+    },
+    {
+      id: '4',
+      name: 'Sub Company 3',
+      ownership: '100%',
+      children: [
+        { id: '4-1', name: 'Company 8', ownership: '73.6%' },
+        { id: '4-2', name: 'Company 9', ownership: '82.7%' },
+        { id: '4-3', name: 'Company 10', ownership: '90.5%' },
+      ],
+    },
+  ],
+};
 
-const CustomNode = ({ data }: any) => {
+interface TreeNodeProps {
+  company: Company;
+  level: number;
+  isLast?: boolean;
+}
+
+const TreeNode = ({ company, level, isLast }: TreeNodeProps) => {
+  const [isOpen, setIsOpen] = useState(level === 0);
+  const hasChildren = company.children && company.children.length > 0;
+
   return (
-    <div className="px-4 py-3 bg-secondary/40 border-2 border-primary/30 rounded-lg backdrop-blur-sm min-w-[140px]">
-      <div className="text-xs text-muted-foreground mb-1">{data.percentage}</div>
-      <div className="text-sm font-medium text-foreground">{data.label}</div>
+    <div className="relative">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex items-start gap-2">
+          {level > 0 && (
+            <div className="flex items-center pt-6">
+              <div className="w-12 border-t border-dashed border-muted-foreground/40" />
+            </div>
+          )}
+          
+          <div className="flex-1">
+            <CollapsibleTrigger asChild>
+              <div
+                className={`
+                  px-6 py-4 rounded-lg border-2 backdrop-blur-sm cursor-pointer
+                  transition-all duration-200 hover:border-primary/50
+                  ${level === 0 ? 'bg-primary/20 border-primary/50' : 'bg-secondary/30 border-border'}
+                  ${hasChildren ? 'hover:bg-secondary/40' : ''}
+                `}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    {hasChildren && (
+                      <div className="text-muted-foreground">
+                        {isOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">{company.name}</div>
+                      {company.ownership && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Ownership: {company.ownership}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {hasChildren && (
+                    <div className="text-xs text-muted-foreground">
+                      {company.children!.length} {company.children!.length === 1 ? 'subsidiary' : 'subsidiaries'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CollapsibleTrigger>
+
+            {hasChildren && (
+              <CollapsibleContent>
+                <div className="ml-8 mt-4 space-y-3 relative">
+                  <div className="absolute left-0 top-0 bottom-0 w-px border-l border-dashed border-muted-foreground/40" />
+                  {company.children!.map((child, index) => (
+                    <TreeNode
+                      key={child.id}
+                      company={child}
+                      level={level + 1}
+                      isLast={index === company.children!.length - 1}
+                    />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            )}
+          </div>
+        </div>
+      </Collapsible>
     </div>
   );
 };
 
-const nodeTypes = {
-  custom: CustomNode,
-};
-
 export const OrganizationTree = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-
   return (
-    <div className="w-full h-[calc(100vh-180px)] bg-dashboard-bg rounded-lg border border-border overflow-hidden">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        fitView
-        defaultEdgeOptions={{
-          style: { stroke: 'hsl(var(--primary))', strokeWidth: 2 },
-        }}
-        className="bg-gradient-to-br from-dashboard-bg to-secondary/20"
-      >
-        <Background color="hsl(var(--muted-foreground))" gap={16} />
-        <Controls className="bg-card border-border" />
-      </ReactFlow>
+    <div className="w-full bg-dashboard-bg rounded-lg border border-border p-8 overflow-auto max-h-[calc(100vh-180px)]">
+      <TreeNode company={organizationData} level={0} />
     </div>
   );
 };

@@ -166,7 +166,7 @@ const generateNodesAndEdges = (
       id: `e${data.id}-${child.id}`,
       source: data.id,
       target: child.id,
-      type: 'straight',
+      type: 'smoothstep',
       style: { 
         stroke: 'hsl(var(--muted-foreground))',
         strokeWidth: 1,
@@ -209,7 +209,7 @@ const generateNodesAndEdges = (
           id: `e${child.id}-${grandchild.id}`,
           source: child.id,
           target: grandchild.id,
-          type: 'straight',
+          type: 'smoothstep',
           style: { 
             stroke: 'hsl(var(--muted-foreground))',
             strokeWidth: 1,

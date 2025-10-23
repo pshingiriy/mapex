@@ -34,10 +34,10 @@ export const FinancialNav = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/nonorganic' ? 'bg-primary/10 text-primary' : ''}`}
-                onClick={() => navigate('/nonorganic')}
+                className={`text-xs ${location.pathname === '/inorganic' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => navigate('/inorganic')}
               >
-                NonOrganic
+                InOrganic
               </Button>
               <Badge variant="secondary" className="bg-primary text-primary-foreground">
                 15 дек 18:28

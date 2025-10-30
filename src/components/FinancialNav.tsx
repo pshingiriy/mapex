@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useLocation } from "react-router-dom";
 
-export const FinancialNav = () => {
+interface FinancialNavProps {
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+}
+
+export const FinancialNav = ({ activeTab = "PL", onTabChange }: FinancialNavProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -83,7 +88,10 @@ export const FinancialNav = () => {
           <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
             Цены
           </button>
-          <button className="text-primary font-medium border-b-2 border-primary pb-2">
+          <button 
+            onClick={() => onTabChange?.("PL")}
+            className={`${activeTab === "PL" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
             PL
           </button>
           <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
@@ -92,10 +100,16 @@ export const FinancialNav = () => {
           <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
             ВО
           </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          <button 
+            onClick={() => onTabChange?.("CF")}
+            className={`${activeTab === "CF" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
             CF
           </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          <button 
+            onClick={() => onTabChange?.("CAPEX")}
+            className={`${activeTab === "CAPEX" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
             CAPEX
           </button>
           <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">

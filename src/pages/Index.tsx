@@ -6,16 +6,31 @@ import { RevenueChart } from "@/components/RevenueChart";
 
 const Index = () => {
   const [selectedIndicator, setSelectedIndicator] = useState<string>("Валовая выручка");
+  const [activeTab, setActiveTab] = useState<string>("PL");
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Reset to default indicator for each tab
+    if (tab === "CF") {
+      setSelectedIndicator("ОСТАТОК НА НАЧАЛО ОТЧЕТНОГО ПЕРИОДА");
+    } else if (tab === "PL") {
+      setSelectedIndicator("Валовая выручка");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-dashboard-bg">
-      <FinancialNav />
+      <FinancialNav activeTab={activeTab} onTabChange={handleTabChange} />
       
       <main className="p-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left column - Financial Table */}
           <div className="animate-fade-in">
-            <FinancialTable onRowClick={setSelectedIndicator} selectedIndicator={selectedIndicator} />
+            <FinancialTable 
+              tableType={activeTab} 
+              onRowClick={setSelectedIndicator} 
+              selectedIndicator={selectedIndicator} 
+            />
           </div>
           
           {/* Right column - Metrics and Chart */}

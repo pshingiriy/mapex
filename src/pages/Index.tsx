@@ -15,6 +15,8 @@ const Index = () => {
       setSelectedIndicator("ОСТАТОК НА НАЧАЛО ОТЧЕТНОГО ПЕРИОДА");
     } else if (tab === "PL") {
       setSelectedIndicator("Валовая выручка");
+    } else if (tab === "HR") {
+      setSelectedIndicator("Среднесписочная численность персонала (ССЧ), чел.");
     }
   };
 

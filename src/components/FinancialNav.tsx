@@ -112,6 +112,12 @@ export const FinancialNav = ({ activeTab = "PL", onTabChange }: FinancialNavProp
           >
             CAPEX
           </button>
+          <button 
+            onClick={() => onTabChange?.("HR")}
+            className={`${activeTab === "HR" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            HR
+          </button>
           <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
             Рыночные доли
           </button>

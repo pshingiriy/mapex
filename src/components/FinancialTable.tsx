@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { TableRowData } from "@/data/tableTypes";
 import { plData } from "@/data/plData";
 import { cfData } from "@/data/cfData";
+import { hrData } from "@/data/hrData";
 
 interface FinancialRowProps {
   row: TableRowData;
@@ -107,9 +108,10 @@ export const FinancialTable = ({ tableType, onRowClick, selectedIndicator }: Fin
     setExpandedRows(newExpanded);
   };
 
-  const data = tableType === "CF" ? cfData : plData;
-  const tableTitle = tableType === "CF" ? "Отчёт о движении денежных средств" : "Отчёт о прибылях и убытках";
-  const tableLabel = tableType === "CF" ? "CF" : "PL";
+  const data = tableType === "CF" ? cfData : tableType === "HR" ? hrData : plData;
+  const tableTitle = tableType === "CF" ? "Отчёт о движении денежных средств" : tableType === "HR" ? "Среднесписочная численность персонала" : "Отчёт о прибылях и убытках";
+  const tableLabel = tableType === "CF" ? "CF" : tableType === "HR" ? "HR" : "PL";
+  const tableUnit = tableType === "HR" ? "чел." : "млн ₽";
 
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -125,7 +127,7 @@ export const FinancialTable = ({ tableType, onRowClick, selectedIndicator }: Fin
       <Table>
         <TableHeader>
           <TableRow className="bg-table-header border-b border-border hover:bg-table-header">
-            <TableHead className="text-muted-foreground font-medium">Показатель, млн ₽</TableHead>
+            <TableHead className="text-muted-foreground font-medium">Показатель, {tableUnit}</TableHead>
             <TableHead className="text-right text-muted-foreground font-medium">План'25</TableHead>
             <TableHead className="text-right text-muted-foreground font-medium">Факт'25</TableHead>
             <TableHead className="text-right text-muted-foreground font-medium">Факт vs План</TableHead>

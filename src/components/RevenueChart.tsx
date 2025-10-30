@@ -3,27 +3,38 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const data = [
-  { month: "2024-01", value: 380 },
-  { month: "2024-02", value: 420 },
-  { month: "2024-03", value: 510 },
-  { month: "2024-04", value: 580 },
-  { month: "2024-05", value: 640 },
-  { month: "2024-06", value: 680 },
-  { month: "2024-07", value: 520 },
-  { month: "2024-08", value: 560 },
-  { month: "2024-09", value: 620 },
-  { month: "2024-10", value: 720 },
-  { month: "2024-11", value: 810 },
-  { month: "2024-12", value: 880 },
-];
+const generateChartData = (indicator: string) => {
+  // Generate random-ish data based on indicator name for demo
+  const seed = indicator.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const baseValue = 300 + (seed % 500);
+  
+  return [
+    { month: "2024-01", value: baseValue + Math.floor(Math.random() * 100) },
+    { month: "2024-02", value: baseValue + Math.floor(Math.random() * 150) },
+    { month: "2024-03", value: baseValue + Math.floor(Math.random() * 200) },
+    { month: "2024-04", value: baseValue + Math.floor(Math.random() * 250) },
+    { month: "2024-05", value: baseValue + Math.floor(Math.random() * 300) },
+    { month: "2024-06", value: baseValue + Math.floor(Math.random() * 350) },
+    { month: "2024-07", value: baseValue + Math.floor(Math.random() * 200) },
+    { month: "2024-08", value: baseValue + Math.floor(Math.random() * 250) },
+    { month: "2024-09", value: baseValue + Math.floor(Math.random() * 300) },
+    { month: "2024-10", value: baseValue + Math.floor(Math.random() * 400) },
+    { month: "2024-11", value: baseValue + Math.floor(Math.random() * 500) },
+    { month: "2024-12", value: baseValue + Math.floor(Math.random() * 600) },
+  ];
+};
 
-export const RevenueChart = () => {
+interface RevenueChartProps {
+  selectedIndicator: string;
+}
+
+export const RevenueChart = ({ selectedIndicator }: RevenueChartProps) => {
+  const data = generateChartData(selectedIndicator);
   return (
     <Card className="bg-chart-bg border-border p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">Выручка</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-1">{selectedIndicator}</h3>
           <p className="text-xs text-muted-foreground">млн ₽</p>
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8">

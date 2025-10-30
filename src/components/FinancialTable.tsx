@@ -192,22 +192,27 @@ interface FinancialRowProps {
   row: TableRowData;
   expandedRows: Set<string>;
   onToggle: (indicator: string) => void;
+  onRowClick: (indicator: string) => void;
+  selectedIndicator: string;
 }
 
-const FinancialRow = ({ row, expandedRows, onToggle }: FinancialRowProps) => {
+const FinancialRow = ({ row, expandedRows, onToggle, onRowClick, selectedIndicator }: FinancialRowProps) => {
   const hasChildren = row.children && row.children.length > 0;
   const isExpanded = expandedRows.has(row.indicator);
   const isPositiveDeviation = row.deviation > 0;
   const isNegativeDeviation = row.deviation < 0;
+  const isSelected = selectedIndicator === row.indicator;
   
   const paddingLeft = `${row.level * 1.5}rem`;
 
   return (
     <>
       <TableRow 
+        onClick={() => onRowClick(row.indicator)}
         className={cn(
-          "bg-table-row hover:bg-table-hover border-b border-border/50 transition-colors",
-          row.level === 0 && "font-semibold bg-table-header/50"
+          "bg-table-row hover:bg-table-hover border-b border-border/50 transition-colors cursor-pointer",
+          row.level === 0 && "font-semibold bg-table-header/50",
+          isSelected && "bg-primary/10 hover:bg-primary/15"
         )}
       >
         <TableCell className="font-medium text-foreground" style={{ paddingLeft }}>
@@ -250,13 +255,20 @@ const FinancialRow = ({ row, expandedRows, onToggle }: FinancialRowProps) => {
           row={child}
           expandedRows={expandedRows}
           onToggle={onToggle}
+          onRowClick={onRowClick}
+          selectedIndicator={selectedIndicator}
         />
       ))}
     </>
   );
 };
 
-export const FinancialTable = () => {
+interface FinancialTableProps {
+  onRowClick: (indicator: string) => void;
+  selectedIndicator: string;
+}
+
+export const FinancialTable = ({ onRowClick, selectedIndicator }: FinancialTableProps) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRow = (indicator: string) => {
@@ -297,6 +309,8 @@ export const FinancialTable = () => {
               row={row}
               expandedRows={expandedRows}
               onToggle={toggleRow}
+              onRowClick={onRowClick}
+              selectedIndicator={selectedIndicator}
             />
           ))}
         </TableBody>

@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { FinancialNav } from "@/components/FinancialNav";
 import { MetricCard } from "@/components/MetricCard";
 import { FinancialTable } from "@/components/FinancialTable";
 import { RevenueChart } from "@/components/RevenueChart";
 
 const Index = () => {
+  const [selectedIndicator, setSelectedIndicator] = useState<string>("Валовая выручка");
+
   return (
     <div className="min-h-screen bg-dashboard-bg">
       <FinancialNav />
@@ -12,7 +15,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left column - Financial Table */}
           <div className="animate-fade-in">
-            <FinancialTable />
+            <FinancialTable onRowClick={setSelectedIndicator} selectedIndicator={selectedIndicator} />
           </div>
           
           {/* Right column - Metrics and Chart */}
@@ -51,7 +54,7 @@ const Index = () => {
             
             {/* Revenue Chart */}
             <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <RevenueChart />
+              <RevenueChart selectedIndicator={selectedIndicator} />
             </div>
           </div>
         </div>

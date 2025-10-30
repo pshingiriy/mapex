@@ -1,6 +1,6 @@
 import { FinancialNav } from "@/components/FinancialNav";
 import { MetricCard } from "@/components/MetricCard";
-import { FinancialTableWithTabs } from "@/components/FinancialTableWithTabs";
+import { FinancialTable } from "@/components/FinancialTable";
 import { RevenueChart } from "@/components/RevenueChart";
 
 const Index = () => {
@@ -10,9 +10,9 @@ const Index = () => {
       
       <main className="p-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column - Financial Table with Tabs */}
+          {/* Left column - Financial Table */}
           <div className="animate-fade-in">
-            <FinancialTableWithTabs />
+            <FinancialTable />
           </div>
           
           {/* Right column - Metrics and Chart */}

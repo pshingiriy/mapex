@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useLocation } from "react-router-dom";
+import { FilterDropdown } from "@/components/FilterDropdown";
 
 interface FinancialNavProps {
   activeTab?: string;
@@ -10,13 +11,80 @@ interface FinancialNavProps {
   page?: string;
   subPage?: string;
   onSubPageChange?: (subPage: string) => void;
+  selectedClusters?: string[];
+  onClusterChange?: (clusters: string[]) => void;
+  selectedCompanies?: string[];
+  onCompanyChange?: (companies: string[]) => void;
 }
 
-export const FinancialNav = ({ activeTab = "PL", onTabChange, page, subPage, onSubPageChange }: FinancialNavProps) => {
+export const FinancialNav = ({ 
+  activeTab = "PL", 
+  onTabChange, 
+  page, 
+  subPage, 
+  onSubPageChange,
+  selectedClusters = [],
+  onClusterChange,
+  selectedCompanies = [],
+  onCompanyChange,
+}: FinancialNavProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const clusterOptions = [
+    "Телеком-операторы/B2O",
+    "Мобильный бизнес",
+    "ЦОД и облачные сервисы",
+    "Информационная безопасность",
+    "Государственные цифровые услуги и сервисы",
+    "Коммерческий ИТ-кластер",
+    "Цифровые регионы",
+    "БТИ (Блок технической инфраструктуры)",
+    "X.Tech (корпоративный венчурный фонд)",
+    "Цифротех",
+    "Здоровье",
+    "Госсервисы",
+    "Образование",
+    "Прочие",
+  ];
+
+  const companyOptions = [
+    "Holding Company",
+    "Sub Company 1",
+    "Sub Company 2",
+    "Sub Company 3",
+    "Company Alpha",
+    "Company Beta",
+    "Company Gamma",
+    "Company Delta",
+    "Company Epsilon",
+    "Company Zeta",
+    "Company Eta",
+    "Company Theta",
+    "Company Iota",
+  ];
+
   const renderSecondLevelMenu = () => {
+    if (page === "finance") {
+      return (
+        <div className="flex items-center gap-4 text-xs">
+          <FilterDropdown
+            label="По Кластеру"
+            options={clusterOptions}
+            selectedOptions={selectedClusters}
+            onSelectionChange={onClusterChange || (() => {})}
+            multiSelect
+          />
+          <FilterDropdown
+            label="По юр.лицу"
+            options={companyOptions}
+            selectedOptions={selectedCompanies}
+            onSelectionChange={onCompanyChange || (() => {})}
+            multiSelect={false}
+          />
+        </div>
+      );
+    }
     if (page === "structure") {
       return (
         <div className="flex items-center gap-6 text-xs">
@@ -36,56 +104,44 @@ export const FinancialNav = ({ activeTab = "PL", onTabChange, page, subPage, onS
       );
     }
 
-    // Default financial menu
-    return (
-      <div className="flex items-center gap-6 text-xs">
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          Ключевые показатели
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          Сводные
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          Цены
-        </button>
-        <button 
-          onClick={() => onTabChange?.("PL")}
-          className={`${activeTab === "PL" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-        >
-          PL
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          Продукты
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          ВО
-        </button>
-        <button 
-          onClick={() => onTabChange?.("CF")}
-          className={`${activeTab === "CF" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-        >
-          CF
-        </button>
-        <button 
-          onClick={() => onTabChange?.("CAPEX")}
-          className={`${activeTab === "CAPEX" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-        >
-          CAPEX
-        </button>
-        <button 
-          onClick={() => onTabChange?.("HR")}
-          className={`${activeTab === "HR" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-        >
-          HR
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          Рыночные доли
-        </button>
-        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-          Ежедневная динамика
-        </button>
-      </div>
-    );
+    return null;
+  };
+
+  const renderThirdLevelMenu = () => {
+    if (page === "finance") {
+      return (
+        <div className="flex items-center gap-6 text-xs">
+          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+            Ключевые показатели
+          </button>
+          <button 
+            onClick={() => onTabChange?.("PL")}
+            className={`${activeTab === "PL" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            PL
+          </button>
+          <button 
+            onClick={() => onTabChange?.("CF")}
+            className={`${activeTab === "CF" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            CF
+          </button>
+          <button 
+            onClick={() => onTabChange?.("CAPEX")}
+            className={`${activeTab === "CAPEX" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            CAPEX
+          </button>
+          <button 
+            onClick={() => onTabChange?.("HR")}
+            className={`${activeTab === "HR" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            HR
+          </button>
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -98,8 +154,10 @@ export const FinancialNav = ({ activeTab = "PL", onTabChange, page, subPage, onS
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/' ? 'bg-primary/10 text-primary' : ''}`}
-                onClick={() => navigate('/')}
+                className={`text-xs ${page === 'finance' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => {
+                  navigate('/');
+                }}
               >
                 Финансы
               </Button>
@@ -155,6 +213,12 @@ export const FinancialNav = ({ activeTab = "PL", onTabChange, page, subPage, onS
       <div className="px-6 py-2 border-t border-border/50">
         {renderSecondLevelMenu()}
       </div>
+      
+      {renderThirdLevelMenu() && (
+        <div className="px-6 py-2 border-t border-border/50">
+          {renderThirdLevelMenu()}
+        </div>
+      )}
     </nav>
   );
 };

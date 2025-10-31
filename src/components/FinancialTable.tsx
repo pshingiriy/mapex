@@ -13,6 +13,7 @@ import { TableRowData } from "@/data/tableTypes";
 import { plData } from "@/data/plData";
 import { cfData } from "@/data/cfData";
 import { hrData } from "@/data/hrData";
+import { PeriodSelector } from "@/components/PeriodSelector";
 
 interface FinancialRowProps {
   row: TableRowData;
@@ -93,9 +94,21 @@ interface FinancialTableProps {
   tableType: string;
   onRowClick: (indicator: string) => void;
   selectedIndicator: string;
+  planPeriod?: string;
+  onPlanPeriodChange?: (period: string) => void;
+  factPeriod?: string;
+  onFactPeriodChange?: (period: string) => void;
 }
 
-export const FinancialTable = ({ tableType, onRowClick, selectedIndicator }: FinancialTableProps) => {
+export const FinancialTable = ({ 
+  tableType, 
+  onRowClick, 
+  selectedIndicator,
+  planPeriod = "2024 год",
+  onPlanPeriodChange = () => {},
+  factPeriod = "2024 год",
+  onFactPeriodChange = () => {},
+}: FinancialTableProps) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const toggleRow = (indicator: string) => {
@@ -128,8 +141,28 @@ export const FinancialTable = ({ tableType, onRowClick, selectedIndicator }: Fin
         <TableHeader>
           <TableRow className="bg-table-header border-b border-border hover:bg-table-header">
             <TableHead className="text-muted-foreground font-medium">Показатель, {tableUnit}</TableHead>
-            <TableHead className="text-right text-muted-foreground font-medium">План'25</TableHead>
-            <TableHead className="text-right text-muted-foreground font-medium">Факт'25</TableHead>
+            <TableHead className="text-right text-muted-foreground font-medium">
+              {tableType !== "HR" ? (
+                <PeriodSelector
+                  type="plan"
+                  selectedPeriod={planPeriod}
+                  onPeriodChange={onPlanPeriodChange}
+                />
+              ) : (
+                "План'25"
+              )}
+            </TableHead>
+            <TableHead className="text-right text-muted-foreground font-medium">
+              {tableType !== "HR" ? (
+                <PeriodSelector
+                  type="fact"
+                  selectedPeriod={factPeriod}
+                  onPeriodChange={onFactPeriodChange}
+                />
+              ) : (
+                "Факт'25"
+              )}
+            </TableHead>
             <TableHead className="text-right text-muted-foreground font-medium">Факт vs План</TableHead>
             <TableHead className="text-right text-muted-foreground font-medium">%</TableHead>
           </TableRow>

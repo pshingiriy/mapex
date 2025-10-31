@@ -7,6 +7,10 @@ import { RevenueChart } from "@/components/RevenueChart";
 const Index = () => {
   const [selectedIndicator, setSelectedIndicator] = useState<string>("Валовая выручка");
   const [activeTab, setActiveTab] = useState<string>("PL");
+  const [selectedClusters, setSelectedClusters] = useState<string[]>([]);
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+  const [planPeriod, setPlanPeriod] = useState<string>("2024 год");
+  const [factPeriod, setFactPeriod] = useState<string>("2024 год");
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -20,18 +24,45 @@ const Index = () => {
     }
   };
 
+  const filterText = () => {
+    const parts = [];
+    if (selectedClusters.length > 0) {
+      parts.push(`Кластер: ${selectedClusters.join(", ")}`);
+    }
+    if (selectedCompanies.length > 0) {
+      parts.push(`Юр.лицо: ${selectedCompanies.join(", ")}`);
+    }
+    return parts.length > 0 ? parts.join(" | ") : "Все данные";
+  };
+
   return (
     <div className="min-h-screen bg-dashboard-bg">
-      <FinancialNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <FinancialNav 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange}
+        page="finance"
+        selectedClusters={selectedClusters}
+        onClusterChange={setSelectedClusters}
+        selectedCompanies={selectedCompanies}
+        onCompanyChange={setSelectedCompanies}
+      />
       
       <main className="p-6 space-y-6">
+        {/* Filter Display */}
+        <div className="text-sm text-muted-foreground">
+          {filterText()}
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left column - Financial Table */}
           <div className="animate-fade-in">
             <FinancialTable 
               tableType={activeTab} 
               onRowClick={setSelectedIndicator} 
-              selectedIndicator={selectedIndicator} 
+              selectedIndicator={selectedIndicator}
+              planPeriod={planPeriod}
+              onPlanPeriodChange={setPlanPeriod}
+              factPeriod={factPeriod}
+              onFactPeriodChange={setFactPeriod}
             />
           </div>
           

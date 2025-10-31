@@ -7,11 +7,86 @@ import { useNavigate, useLocation } from "react-router-dom";
 interface FinancialNavProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  page?: string;
+  subPage?: string;
+  onSubPageChange?: (subPage: string) => void;
 }
 
-export const FinancialNav = ({ activeTab = "PL", onTabChange }: FinancialNavProps) => {
+export const FinancialNav = ({ activeTab = "PL", onTabChange, page, subPage, onSubPageChange }: FinancialNavProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const renderSecondLevelMenu = () => {
+    if (page === "structure") {
+      return (
+        <div className="flex items-center gap-6 text-xs">
+          <button 
+            onClick={() => onSubPageChange?.("tree")}
+            className={`${subPage === "tree" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            Структура Группы
+          </button>
+          <button 
+            onClick={() => onSubPageChange?.("clusters")}
+            className={`${subPage === "clusters" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            Кластеры
+          </button>
+        </div>
+      );
+    }
+
+    // Default financial menu
+    return (
+      <div className="flex items-center gap-6 text-xs">
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          Ключевые показатели
+        </button>
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          Сводные
+        </button>
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          Цены
+        </button>
+        <button 
+          onClick={() => onTabChange?.("PL")}
+          className={`${activeTab === "PL" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+        >
+          PL
+        </button>
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          Продукты
+        </button>
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          ВО
+        </button>
+        <button 
+          onClick={() => onTabChange?.("CF")}
+          className={`${activeTab === "CF" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+        >
+          CF
+        </button>
+        <button 
+          onClick={() => onTabChange?.("CAPEX")}
+          className={`${activeTab === "CAPEX" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+        >
+          CAPEX
+        </button>
+        <button 
+          onClick={() => onTabChange?.("HR")}
+          className={`${activeTab === "HR" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+        >
+          HR
+        </button>
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          Рыночные доли
+        </button>
+        <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
+          Ежедневная динамика
+        </button>
+      </div>
+    );
+  };
 
   return (
     <nav className="bg-dashboard-nav border-b border-border">
@@ -78,53 +153,7 @@ export const FinancialNav = ({ activeTab = "PL", onTabChange }: FinancialNavProp
       </div>
       
       <div className="px-6 py-2 border-t border-border/50">
-        <div className="flex items-center gap-6 text-xs">
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            Ключевые показатели
-          </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            Сводные
-          </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            Цены
-          </button>
-          <button 
-            onClick={() => onTabChange?.("PL")}
-            className={`${activeTab === "PL" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-          >
-            PL
-          </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            Продукты
-          </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            ВО
-          </button>
-          <button 
-            onClick={() => onTabChange?.("CF")}
-            className={`${activeTab === "CF" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-          >
-            CF
-          </button>
-          <button 
-            onClick={() => onTabChange?.("CAPEX")}
-            className={`${activeTab === "CAPEX" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-          >
-            CAPEX
-          </button>
-          <button 
-            onClick={() => onTabChange?.("HR")}
-            className={`${activeTab === "HR" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
-          >
-            HR
-          </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            Рыночные доли
-          </button>
-          <button className="text-muted-foreground hover:text-foreground transition-colors pb-2">
-            Ежедневная динамика
-          </button>
-        </div>
+        {renderSecondLevelMenu()}
       </div>
     </nav>
   );

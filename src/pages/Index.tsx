@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { FinancialNav } from "@/components/FinancialNav";
 import { MetricCard } from "@/components/MetricCard";
 import { FinancialTable } from "@/components/FinancialTable";
 import { RevenueChart } from "@/components/RevenueChart";
 
 const Index = () => {
+  const location = useLocation();
   const [selectedIndicator, setSelectedIndicator] = useState<string>("Валовая выручка");
   const [activeTab, setActiveTab] = useState<string>("PL");
   const [selectedClusters, setSelectedClusters] = useState<string[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
   const [planPeriod, setPlanPeriod] = useState<string>("2024 год");
   const [factPeriod, setFactPeriod] = useState<string>("2024 год");
+
+  // Handle navigation from OrganizationTree
+  useEffect(() => {
+    const state = location.state as { selectedCompany?: string } | null;
+    if (state?.selectedCompany) {
+      setSelectedCompanies([state.selectedCompany]);
+    }
+  }, [location.state]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);

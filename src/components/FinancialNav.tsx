@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FilterDropdown } from "@/components/FilterDropdown";
+import { companies } from "@/data/organizationData";
 
 interface FinancialNavProps {
   activeTab?: string;
@@ -48,21 +49,7 @@ export const FinancialNav = ({
     "Прочие",
   ];
 
-  const companyOptions = [
-    "Holding Company",
-    "Sub Company 1",
-    "Sub Company 2",
-    "Sub Company 3",
-    "Company Alpha",
-    "Company Beta",
-    "Company Gamma",
-    "Company Delta",
-    "Company Epsilon",
-    "Company Zeta",
-    "Company Eta",
-    "Company Theta",
-    "Company Iota",
-  ];
+  const companyOptions = companies.map(c => c.name);
 
   const renderSecondLevelMenu = () => {
     if (page === "finance") {
@@ -99,6 +86,12 @@ export const FinancialNav = ({
             className={`${subPage === "clusters" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
           >
             Кластеры
+          </button>
+          <button 
+            onClick={() => onSubPageChange?.("curators")}
+            className={`${subPage === "curators" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            Кураторы
           </button>
         </div>
       );

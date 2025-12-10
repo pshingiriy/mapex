@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Node,
   Edge,
@@ -12,91 +13,113 @@ import ReactFlow, {
   Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, User } from 'lucide-react';
+import { companies, clusterInfo, isPrivateInvestor } from '@/data/organizationData';
 
-interface Company {
+interface TreeNode {
   id: string;
   name: string;
-  ownership: string;
-  children?: Company[];
+  ownership1?: string;
+  parentName1?: string;
+  ownership2?: string;
+  parentName2?: string;
+  cluster?: string | null;
+  children: TreeNode[];
 }
 
-const organizationData: Company = {
-  id: '1',
-  name: 'Holding Company',
-  ownership: '',
-  children: [
-    { 
-      id: '2', 
-      name: 'Sub Company 1', 
-      ownership: '100%',
-      children: [
-        { id: '2-1', name: 'Company Alpha', ownership: '75%' },
-        { id: '2-2', name: 'Company Beta', ownership: '60%' },
-        { id: '2-3', name: 'Company Gamma', ownership: '85%' },
-      ]
-    },
-    { 
-      id: '3', 
-      name: 'Sub Company 2', 
-      ownership: '100%',
-      children: [
-        { id: '3-1', name: 'Company Delta', ownership: '45%' },
-        { id: '3-2', name: 'Company Epsilon', ownership: '90%' },
-      ]
-    },
-    { 
-      id: '4', 
-      name: 'Sub Company 3', 
-      ownership: '100%',
-      children: [
-        { id: '4-1', name: 'Company Zeta', ownership: '55%' },
-        { id: '4-2', name: 'Company Eta', ownership: '70%' },
-        { id: '4-3', name: 'Company Theta', ownership: '65%' },
-        { id: '4-4', name: 'Company Iota', ownership: '80%' },
-      ]
-    },
-  ],
+// Build tree structure from flat data
+const buildTree = (): TreeNode => {
+  const nodeMap = new Map<string, TreeNode>();
+  
+  // Create all nodes
+  companies.forEach(company => {
+    nodeMap.set(company.name, {
+      id: company.id.toString(),
+      name: company.name,
+      ownership1: company.ownership1 || undefined,
+      parentName1: company.parentName1 || undefined,
+      ownership2: company.ownership2 || undefined,
+      parentName2: company.parentName2 || undefined,
+      cluster: company.cluster,
+      children: [],
+    });
+  });
+  
+  // Build relationships (only using primary parent for tree structure)
+  const root = nodeMap.get("Parent holding company")!;
+  
+  companies.forEach(company => {
+    if (company.parentName1 && nodeMap.has(company.parentName1)) {
+      const parent = nodeMap.get(company.parentName1)!;
+      const child = nodeMap.get(company.name)!;
+      if (!parent.children.find(c => c.id === child.id)) {
+        parent.children.push(child);
+      }
+    }
+  });
+  
+  return root;
 };
+
+const organizationData = buildTree();
 
 // Custom node component
 const CustomNode = ({ data }: any) => {
   const hasChildren = data.hasChildren;
   const isExpanded = data.isExpanded;
+  const ClusterIcon = data.clusterIcon;
+  const clusterColor = data.clusterColor;
+  const isPrivate = data.isPrivateInvestor;
   
   return (
     <div className="relative">
       <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
       <div
-        onClick={data.onToggle}
+        onClick={(e) => {
+          if (hasChildren) {
+            e.stopPropagation();
+            data.onToggle();
+          }
+        }}
         className={`
-          px-6 py-3 rounded-xl border-2 backdrop-blur-sm
+          px-4 py-2.5 rounded-xl border-2 backdrop-blur-sm
           transition-all duration-200
           ${data.isParent 
             ? 'bg-primary/20 border-primary/50 shadow-lg shadow-primary/20' 
             : 'bg-secondary/30 border-border shadow-md'
           }
           hover:border-primary/50 hover:shadow-lg
-          min-w-[160px]
-          ${hasChildren ? 'cursor-pointer' : ''}
+          min-w-[140px]
+          ${hasChildren ? 'cursor-pointer' : 'cursor-pointer'}
         `}
       >
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center gap-2">
           {hasChildren && (
-            <div className="text-muted-foreground">
-              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            <div className="text-muted-foreground flex-shrink-0">
+              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </div>
           )}
-          <div className="text-center">
-            <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+          {isPrivate && (
+            <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+              <User size={12} className="text-muted-foreground" />
+            </div>
+          )}
+          <div 
+            className="text-center flex-1 cursor-pointer hover:text-primary transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              data.onNavigate();
+            }}
+          >
+            <div className="text-xs font-semibold text-foreground whitespace-nowrap">
               {data.label}
             </div>
-            {data.ownership && (
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {data.ownership}
-              </div>
-            )}
           </div>
+          {ClusterIcon && (
+            <div className={`w-5 h-5 rounded bg-gradient-to-br ${clusterColor} flex items-center justify-center flex-shrink-0`}>
+              <ClusterIcon size={10} className="text-white" />
+            </div>
+          )}
         </div>
       </div>
       <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
@@ -108,128 +131,144 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
+// Calculate tree depth and width
+const getTreeDimensions = (node: TreeNode, expandedNodes: Set<string>, depth = 0): { maxDepth: number; widthAtDepth: Map<number, number> } => {
+  const widthAtDepth = new Map<number, number>();
+  widthAtDepth.set(depth, (widthAtDepth.get(depth) || 0) + 1);
+  
+  let maxDepth = depth;
+  
+  if (expandedNodes.has(node.id) && node.children.length > 0) {
+    node.children.forEach(child => {
+      const childDims = getTreeDimensions(child, expandedNodes, depth + 1);
+      maxDepth = Math.max(maxDepth, childDims.maxDepth);
+      childDims.widthAtDepth.forEach((count, d) => {
+        widthAtDepth.set(d, (widthAtDepth.get(d) || 0) + count);
+      });
+    });
+  }
+  
+  return { maxDepth, widthAtDepth };
+};
+
 // Generate nodes and edges from data with expansion state
 const generateNodesAndEdges = (
-  data: Company, 
+  data: TreeNode, 
   expandedNodes: Set<string>,
-  onToggle: (nodeId: string) => void
+  onToggle: (nodeId: string) => void,
+  onNavigate: (companyName: string) => void
 ) => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   
-  // Parent node at top center
-  const hasRootChildren = (data.children?.length || 0) > 0;
-  nodes.push({
-    id: data.id,
-    type: 'custom',
-    position: { x: 500, y: 50 },
-    data: { 
-      label: data.name,
-      isParent: true,
-      hasChildren: hasRootChildren,
-      isExpanded: expandedNodes.has(data.id),
-      onToggle: () => hasRootChildren && onToggle(data.id),
-    },
-  });
-
-  // Only show children if root is expanded
-  if (!expandedNodes.has(data.id)) {
-    return { nodes, edges };
-  }
-
-  // Calculate positions for level 2 children (Sub Companies)
-  const children = data.children || [];
-  const childSpacing = 280;
-  const totalWidth = (children.length - 1) * childSpacing;
-  const startX = 500 - totalWidth / 2;
-
-  children.forEach((child, index) => {
-    const xPos = startX + index * childSpacing;
-    const hasGrandchildren = (child.children?.length || 0) > 0;
+  const addNode = (node: TreeNode, x: number, y: number, parentId?: string, ownership?: string) => {
+    const hasChildren = node.children.length > 0;
+    const company = companies.find(c => c.name === node.name);
+    const cluster = company?.cluster ? clusterInfo[company.cluster] : null;
     
     nodes.push({
-      id: child.id,
+      id: node.id,
       type: 'custom',
-      position: { x: xPos, y: 200 },
+      position: { x, y },
       data: { 
-        label: child.name,
-        ownership: child.ownership,
-        isParent: false,
-        hasChildren: hasGrandchildren,
-        isExpanded: expandedNodes.has(child.id),
-        onToggle: () => hasGrandchildren && onToggle(child.id),
+        label: node.name,
+        isParent: !parentId,
+        hasChildren,
+        isExpanded: expandedNodes.has(node.id),
+        onToggle: () => hasChildren && onToggle(node.id),
+        onNavigate: () => onNavigate(node.name),
+        clusterIcon: cluster?.icon,
+        clusterColor: cluster?.color,
+        isPrivateInvestor: isPrivateInvestor(node.name),
       },
     });
-
-    // Add edge from parent to child
-    edges.push({
-      id: `e${data.id}-${child.id}`,
-      source: data.id,
-      target: child.id,
-      type: 'smoothstep',
-      style: { 
-        stroke: 'hsl(var(--muted-foreground))',
-        strokeWidth: 1,
-        strokeDasharray: '5,5',
-      },
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 12,
-        height: 12,
-        color: 'hsl(var(--muted-foreground))',
-      },
-    });
-
-    // Only show grandchildren if this child is expanded
-    if (expandedNodes.has(child.id) && child.children) {
-      const grandchildren = child.children;
-      const grandchildSpacing = 200;
-      const grandTotalWidth = (grandchildren.length - 1) * grandchildSpacing;
-      const grandStartX = xPos - grandTotalWidth / 2;
-
-      grandchildren.forEach((grandchild, gIndex) => {
-        const gxPos = grandStartX + gIndex * grandchildSpacing;
-        
-        nodes.push({
-          id: grandchild.id,
-          type: 'custom',
-          position: { x: gxPos, y: 380 },
-          data: { 
-            label: grandchild.name,
-            ownership: grandchild.ownership,
-            isParent: false,
-            hasChildren: false,
-            isExpanded: false,
-            onToggle: () => {},
-          },
-        });
-
-        // Add edge from child to grandchild
-        edges.push({
-          id: `e${child.id}-${grandchild.id}`,
-          source: child.id,
-          target: grandchild.id,
-          type: 'smoothstep',
-          style: { 
-            stroke: 'hsl(var(--muted-foreground))',
-            strokeWidth: 1,
-            strokeDasharray: '5,5',
-          },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: 12,
-            height: 12,
-            color: 'hsl(var(--muted-foreground))',
-          },
-        });
+    
+    if (parentId) {
+      edges.push({
+        id: `e${parentId}-${node.id}`,
+        source: parentId,
+        target: node.id,
+        type: 'smoothstep',
+        label: ownership || '',
+        labelStyle: { 
+          fill: 'hsl(var(--muted-foreground))', 
+          fontSize: 10,
+          fontWeight: 500,
+        },
+        labelBgStyle: { 
+          fill: 'hsl(var(--background))',
+          fillOpacity: 0.9,
+        },
+        labelBgPadding: [4, 2] as [number, number],
+        labelBgBorderRadius: 4,
+        style: { 
+          stroke: 'hsl(var(--muted-foreground))',
+          strokeWidth: 1,
+          strokeDasharray: '5,5',
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 10,
+          height: 10,
+          color: 'hsl(var(--muted-foreground))',
+        },
       });
     }
-  });
-
+    
+    // Add secondary ownership edges
+    if (node.parentName2 && node.ownership2) {
+      const parentNode = companies.find(c => c.name === node.parentName2);
+      if (parentNode && !isPrivateInvestor(node.parentName2)) {
+        edges.push({
+          id: `e${parentNode.id}-${node.id}-secondary`,
+          source: parentNode.id.toString(),
+          target: node.id,
+          type: 'smoothstep',
+          label: node.ownership2,
+          labelStyle: { 
+            fill: 'hsl(var(--muted-foreground))', 
+            fontSize: 9,
+            fontWeight: 400,
+          },
+          labelBgStyle: { 
+            fill: 'hsl(var(--background))',
+            fillOpacity: 0.9,
+          },
+          labelBgPadding: [3, 2] as [number, number],
+          labelBgBorderRadius: 4,
+          style: { 
+            stroke: 'hsl(var(--primary))',
+            strokeWidth: 1,
+            strokeDasharray: '3,3',
+            opacity: 0.5,
+          },
+        });
+      }
+    }
+  };
+  
+  const processNode = (node: TreeNode, x: number, y: number, parentId?: string, ownership?: string) => {
+    addNode(node, x, y, parentId, ownership);
+    
+    if (expandedNodes.has(node.id) && node.children.length > 0) {
+      const childSpacing = 180;
+      const totalWidth = (node.children.length - 1) * childSpacing;
+      const startX = x - totalWidth / 2;
+      
+      node.children.forEach((child, index) => {
+        const childX = startX + index * childSpacing;
+        processNode(child, childX, y + 120, node.id, child.ownership1);
+      });
+    }
+  };
+  
+  processNode(data, 600, 50);
+  
   return { nodes, edges };
 };
 
 export const OrganizationTree = () => {
+  const navigate = useNavigate();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
 
   const handleToggle = useCallback((nodeId: string) => {
@@ -244,25 +283,30 @@ export const OrganizationTree = () => {
     });
   }, []);
 
+  const handleNavigate = useCallback((companyName: string) => {
+    navigate('/', { state: { selectedCompany: companyName } });
+  }, [navigate]);
+
   const { nodes: generatedNodes, edges: generatedEdges } = generateNodesAndEdges(
     organizationData, 
     expandedNodes,
-    handleToggle
+    handleToggle,
+    handleNavigate
   );
   
   const [nodes, setNodes, onNodesChange] = useNodesState(generatedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(generatedEdges);
 
-  // Update nodes and edges when expansion state changes
   useEffect(() => {
     const { nodes: newNodes, edges: newEdges } = generateNodesAndEdges(
       organizationData,
       expandedNodes,
-      handleToggle
+      handleToggle,
+      handleNavigate
     );
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [expandedNodes, handleToggle, setNodes, setEdges]);
+  }, [expandedNodes, handleToggle, handleNavigate, setNodes, setEdges]);
 
   return (
     <div className="w-full h-[calc(100vh-180px)] bg-dashboard-bg rounded-lg border border-border overflow-hidden">
@@ -273,9 +317,9 @@ export const OrganizationTree = () => {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
-        minZoom={0.5}
+        minZoom={0.3}
         maxZoom={1.5}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         proOptions={{ hideAttribution: true }}
       >
         <Background 

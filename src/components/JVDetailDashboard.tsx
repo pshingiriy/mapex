@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { jvCompanies, JVCompany } from "@/data/jvData";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, Calendar, Clock } from "lucide-react";
 
 interface JVDetailDashboardProps {
   selectedJVId: string | null;
@@ -40,8 +41,8 @@ export const JVDetailDashboard = ({ selectedJVId, onSelectJV }: JVDetailDashboar
 
   if (!selectedJV) {
     return (
-      <div className="flex items-center justify-center h-64 bg-white">
-        <p className="text-gray-500">Выберите СП для просмотра</p>
+      <div className="flex items-center justify-center h-64 bg-background">
+        <p className="text-muted-foreground">Выберите СП для просмотра</p>
       </div>
     );
   }
@@ -51,38 +52,56 @@ export const JVDetailDashboard = ({ selectedJVId, onSelectJV }: JVDetailDashboar
     { name: '2025', Выручка: selectedJV.revenue2025, OIBDA: selectedJV.oibda2025 },
   ];
 
-  // Corporate events for the selected JV
+  // Corporate events
   const corporateEvents = [
-    { label: "Реализация Опциона\\реорганизация", value: "-" },
-    { label: "Прекращение партнерства", value: "Не планируется" },
-    { label: "Выплата дивидендов", value: "-" },
-    { label: "Утвержденный бюджет", value: "-", highlight: true },
-    { label: "Утвержденная стратегия", value: "-", highlight: true },
-    { label: "Изменения по ТОП-менеджменту (смена\\пролонгация ГД, предложения по ЗГД)", value: "-" },
-    { label: "Прочие важные корп.события СП", value: "-", highlight: true },
+    { label: "Реализация Опциона / реорганизация", value: "-", status: "neutral" },
+    { label: "Прекращение партнерства", value: selectedJV.status === "Закрытие" ? "Запланировано" : "Не планируется", status: selectedJV.status === "Закрытие" ? "warning" : "neutral" },
+    { label: "Выплата дивидендов", value: selectedJV.dividends2025 > 0 ? "Запланировано" : "-", status: selectedJV.dividends2025 > 0 ? "success" : "neutral" },
+    { label: "Утвержденный бюджет", value: "-", status: "highlight" },
+    { label: "Утвержденная стратегия", value: "-", status: "highlight" },
+    { label: "Изменения по ТОП-менеджменту", value: "-", status: "neutral" },
+    { label: "Прочие важные корп. события СП", value: "-", status: "highlight" },
   ];
 
   // Upcoming events
   const upcomingEvents = selectedJV.events
     .filter(e => e.status === 'planned')
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3)
-    .map((e, i) => ({
-      name: `Событие ${i + 1}`,
-      date: new Date(e.date).toLocaleDateString('ru-RU'),
-      daysLeft: Math.ceil((new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    }));
+    .map((e) => {
+      const daysLeft = Math.ceil((new Date(e.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      return {
+        title: e.title,
+        date: new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+        daysLeft,
+        urgent: daysLeft <= 7 && daysLeft > 0
+      };
+    });
 
   const currentMonth = new Date().toLocaleString('ru-RU', { month: 'long' });
   const capitalizedMonth = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Активный":
+        return <Badge className="bg-success/20 text-success border-success/30">Активный</Badge>;
+      case "На паузе":
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">На паузе</Badge>;
+      case "Закрытие":
+        return <Badge className="bg-destructive/20 text-destructive border-destructive/30">Закрытие</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
   return (
-    <div className="bg-white min-h-screen p-6 space-y-4">
-      {/* Top Row - Company Selector and Main Info */}
-      <div className="grid grid-cols-12 gap-4">
+    <div className="bg-background min-h-screen p-6 space-y-6 animate-fade-in">
+      {/* Header Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Company Selector */}
-        <div className="col-span-3">
-          <div className="text-sm text-gray-600 mb-1">Введите название компании</div>
+        <div className="lg:col-span-3 space-y-3">
           <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchQuery || selectedJV.name}
               onChange={(e) => {
@@ -90,265 +109,271 @@ export const JVDetailDashboard = ({ selectedJVId, onSelectJV }: JVDetailDashboar
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
-              className="bg-white border-gray-300 text-gray-800"
-              placeholder="Поиск..."
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+              className="pl-10 bg-card border-border text-foreground"
+              placeholder="Поиск компании..."
             />
             {showDropdown && filteredCompanies.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+              <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-60 overflow-auto">
                 {filteredCompanies.map(jv => (
                   <div
                     key={jv.id}
-                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                    className="px-4 py-2.5 hover:bg-muted cursor-pointer text-foreground transition-colors"
                     onClick={() => handleSelectCompany(jv)}
                   >
-                    {jv.name}
+                    <p className="font-medium">{jv.name}</p>
+                    <p className="text-xs text-muted-foreground">{jv.cluster}</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
-          <Card className="mt-4 border border-gray-200">
+          
+          <Card className="bg-card border-border">
             <CardContent className="p-4">
-              <div className="font-bold text-lg text-gray-800">{selectedJV.name}</div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">{selectedJV.name}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{selectedJV.cluster}</p>
+                </div>
+                {getStatusBadge(selectedJV.status)}
+              </div>
+              <div className="mt-4 pt-4 border-t border-border space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Куратор</span>
+                  <span className="text-sm font-medium text-foreground">{selectedJV.curator}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Партнёр</span>
+                  <span className="text-sm font-medium text-foreground">{selectedJV.partner}</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
-          <Card className="mt-2 border border-gray-200">
-            <CardContent className="p-4 space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Кластер</span>
-                <span className="text-gray-800">{selectedJV.cluster}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Куратор</span>
-                <span className="text-gray-800">{selectedJV.curator}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search Tag */}
-        <div className="col-span-1 flex items-start pt-6">
-          <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded text-sm">
-            {selectedJV.name.split(' ')[0].toLowerCase()}
-          </div>
         </div>
 
         {/* Effective Share */}
-        <div className="col-span-2">
-          <Card className="border border-gray-200 h-full">
+        <div className="lg:col-span-2">
+          <Card className="bg-card border-border h-full">
             <CardContent className="p-4 flex flex-col justify-center h-full">
-              <div className="text-xs text-gray-600 text-center">Эффективная доля Группы Ростелеком в УК (голосов)</div>
-              <div className="text-3xl font-bold text-gray-800 text-center mt-2">{selectedJV.ownershipPercent.toFixed(2)}%</div>
+              <p className="text-xs text-muted-foreground text-center">Эффективная доля в УК</p>
+              <p className="text-4xl font-bold text-primary text-center mt-2">{selectedJV.ownershipPercent.toFixed(2)}%</p>
+              <p className="text-xs text-muted-foreground text-center mt-1">голосов</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Dividends Table */}
-        <div className="col-span-3">
-          <Card className="border border-gray-200">
+        <div className="lg:col-span-3">
+          <Card className="bg-card border-border h-full">
             <CardContent className="p-4">
-              <div className="font-bold text-gray-800 mb-2">Дивиденды</div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-1"></th>
-                    <th className="text-center py-1 text-purple-600">2024</th>
-                    <th className="text-center py-1 text-green-600">2025</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-1 text-gray-600">Сумма, тыс руб</td>
-                    <td className="text-center text-gray-800">{selectedJV.dividends2024 > 0 ? formatNumber(selectedJV.dividends2024) : '-'}</td>
-                    <td className="text-center text-gray-800">{selectedJV.dividends2025 > 0 ? formatNumber(selectedJV.dividends2025) : '-'}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 text-gray-600">Статус</td>
-                    <td className="text-center text-gray-800">-</td>
-                    <td className="text-center text-gray-800">-</td>
-                  </tr>
-                </tbody>
-              </table>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Дивиденды</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <p className="text-xs text-primary font-medium">2024</p>
+                  <p className="text-lg font-bold text-foreground mt-1">
+                    {selectedJV.dividends2024 > 0 ? formatNumber(selectedJV.dividends2024) : '-'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">тыс. руб</p>
+                </div>
+                <div className="p-3 rounded-lg bg-success/10 border border-success/20">
+                  <p className="text-xs text-success font-medium">2025</p>
+                  <p className="text-lg font-bold text-foreground mt-1">
+                    {selectedJV.dividends2025 > 0 ? formatNumber(selectedJV.dividends2025) : '-'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">тыс. руб</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Calendar */}
-        <div className="col-span-3">
-          <Card className="border border-gray-200">
+        <div className="lg:col-span-4">
+          <Card className="bg-card border-border h-full">
             <CardContent className="p-4">
-              <div className="font-bold text-gray-800 mb-2">Календарь событий</div>
-              <div className="bg-purple-600 text-white text-center py-2 rounded-t font-medium">
-                {capitalizedMonth}
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Календарь событий</h3>
               </div>
-              <div className="border border-gray-200 border-t-0 p-2 min-h-[60px]">
-                {/* Calendar grid placeholder */}
+              <div className="bg-primary rounded-t-lg text-center py-2">
+                <span className="text-sm font-medium text-primary-foreground">{capitalizedMonth}</span>
+              </div>
+              <div className="border border-t-0 border-border rounded-b-lg p-3 min-h-[80px]">
+                {upcomingEvents.length > 0 ? (
+                  <div className="space-y-2">
+                    {upcomingEvents.map((event, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <span className="text-foreground truncate flex-1">{event.title}</span>
+                        <span className="text-muted-foreground ml-2">{event.date}</span>
+                        {event.urgent && (
+                          <Badge className="ml-2 bg-success/20 text-success text-xs">
+                            {event.daysLeft}д
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center">Нет событий</p>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Middle Row */}
-      <div className="grid grid-cols-12 gap-4">
+      {/* Middle Row - Metrics and Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* JV Indicators */}
-        <div className="col-span-2">
-          <Card className="border border-gray-200">
+        <div className="lg:col-span-3">
+          <Card className="bg-card border-border">
             <CardContent className="p-4">
-              <div className="font-bold text-gray-800 mb-3 text-center">Показатели СП</div>
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 text-gray-600">Выручка</td>
-                    <td className="text-right font-semibold text-gray-800">{formatNumber(selectedJV.revenue2024)}</td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 text-gray-600">OIBDA</td>
-                    <td className="text-right font-semibold text-gray-800">{formatNumber(selectedJV.oibda2024)}</td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td colSpan={2} className="py-1 text-center text-gray-500 text-xs">2024</td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 text-gray-600">Выручка</td>
-                    <td className="text-right">
-                      <span className="font-semibold text-gray-800">{formatNumber(selectedJV.revenue2025)}</span>
-                      <span className="ml-1 text-green-600 text-xs">
-                        {Number(getGrowthPercent(selectedJV.revenue2025, selectedJV.revenue2024)) >= 0 ? '▲' : '▼'} 
-                        {getGrowthPercent(selectedJV.revenue2025, selectedJV.revenue2024)}%
+              <h3 className="text-sm font-semibold text-foreground mb-4 text-center">Показатели СП</h3>
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-muted/30">
+                  <p className="text-xs text-muted-foreground text-center mb-2">2024</p>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Выручка</span>
+                    <span className="text-sm font-semibold text-foreground">{formatNumber(selectedJV.revenue2024)}</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-sm text-muted-foreground">OIBDA</span>
+                    <span className="text-sm font-semibold text-foreground">{formatNumber(selectedJV.oibda2024)}</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <p className="text-xs text-primary text-center mb-2">2025</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Выручка</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-semibold text-foreground">{formatNumber(selectedJV.revenue2025)}</span>
+                      {Number(getGrowthPercent(selectedJV.revenue2025, selectedJV.revenue2024)) >= 0 ? (
+                        <TrendingUp className="w-3 h-3 text-success" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3 text-destructive" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-sm text-muted-foreground">OIBDA</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-semibold ${selectedJV.oibda2025 < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                        {formatNumber(selectedJV.oibda2025)}
                       </span>
-                    </td>
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-2 text-gray-600">OIBDA</td>
-                    <td className="text-right">
-                      <span className="font-semibold text-gray-800">{formatNumber(selectedJV.oibda2025)}</span>
-                      <span className="ml-1 text-green-600 text-xs">
-                        {Number(getGrowthPercent(selectedJV.oibda2025, selectedJV.oibda2024)) >= 0 ? '▲' : '▼'} 
-                        {getGrowthPercent(selectedJV.oibda2025, selectedJV.oibda2024)}%
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan={2} className="py-1 text-center text-gray-500 text-xs">2025</td>
-                  </tr>
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Competency */}
-        <div className="col-span-2">
-          <Card className="border border-gray-200 h-full">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-bold text-gray-800">Компетенция</span>
-                <span className="text-gray-500">0</span>
-              </div>
-              <div className="border border-gray-200 rounded min-h-[100px]">
-                {/* Empty competency chart placeholder */}
+                      {Number(getGrowthPercent(selectedJV.oibda2025, selectedJV.oibda2024)) >= 0 ? (
+                        <TrendingUp className="w-3 h-3 text-success" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3 text-destructive" />
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Chart */}
-        <div className="col-span-3">
-          <Card className="border border-gray-200 h-full">
+        <div className="lg:col-span-5">
+          <Card className="bg-card border-border h-full">
             <CardContent className="p-4">
-              <ResponsiveContainer width="100%" height={180}>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Динамика показателей</h3>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="Выручка" fill="#6366f1" />
-                  <Bar dataKey="OIBDA" fill="#f97316" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <Legend formatter={(value) => <span style={{ color: 'hsl(var(--foreground))' }}>{value}</span>} />
+                  <Bar dataKey="Выручка" fill="hsl(260, 85%, 65%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="OIBDA" fill="hsl(25, 95%, 53%)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* Perspective and Commentary */}
-        <div className="col-span-2">
-          <Card className="border border-gray-200 mb-2">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-gray-800">Перспектива</span>
-                <span className="text-gray-500">-</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border border-gray-200">
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-gray-800">Комментарий</span>
-                <span className="text-gray-500">-</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Upcoming Events */}
-        <div className="col-span-3">
-          <Card className="border border-gray-200">
+        {/* Upcoming Events & Notes */}
+        <div className="lg:col-span-4 space-y-4">
+          <Card className="bg-card border-border">
             <CardContent className="p-4">
-              <div className="font-bold text-gray-800 mb-2">Ближайшие события</div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-1 text-gray-600"></th>
-                    <th className="text-center py-1 text-gray-600">Дата</th>
-                    <th className="text-right py-1 text-gray-600"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
-                    <tr key={i} className="border-b border-gray-100">
-                      <td className="py-2 text-gray-800">{event.name}</td>
-                      <td className="text-center text-gray-600">{event.date}</td>
-                      <td className="text-right">
-                        {event.daysLeft > 0 && event.daysLeft <= 7 && (
-                          <span className="text-green-600 text-xs">Осталось {event.daysLeft} дня</span>
-                        )}
-                      </td>
-                    </tr>
-                  )) : (
-                    <tr>
-                      <td colSpan={3} className="py-2 text-center text-gray-500">Нет запланированных событий</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Ближайшие события</h3>
+              </div>
+              <div className="space-y-2">
+                {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
+                  <div key={i} className="p-2 rounded-lg bg-muted/30 flex items-center justify-between">
+                    <span className="text-sm text-foreground truncate flex-1">{event.title}</span>
+                    <div className="flex items-center gap-2 ml-2">
+                      <span className="text-xs text-muted-foreground">{event.date}</span>
+                      {event.urgent && (
+                        <Badge className="bg-success/20 text-success text-xs">
+                          {event.daysLeft}д
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">Нет запланированных событий</p>
+                )}
+              </div>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="bg-card border-border">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Перспектива</p>
+                <p className="text-sm text-foreground mt-1">-</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Комментарий</p>
+                <p className="text-sm text-foreground mt-1">-</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
       {/* Bottom Row - Corporate Events */}
-      <div className="grid grid-cols-1">
-        <Card className="border border-gray-200">
-          <CardContent className="p-4">
-            <table className="w-full text-sm">
-              <tbody>
-                {corporateEvents.map((event, i) => (
-                  <tr key={i} className={event.highlight ? "bg-yellow-50" : ""}>
-                    <td className="py-2 px-3 text-gray-700 border-b border-gray-100 font-medium">
-                      {event.label}
-                    </td>
-                    <td className="py-2 px-3 text-gray-600 border-b border-gray-100 text-right">
-                      {event.value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="bg-card border-border">
+        <CardContent className="p-4">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Корпоративные события</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {corporateEvents.map((event, i) => (
+              <div 
+                key={i} 
+                className={`p-3 rounded-lg flex items-center justify-between ${
+                  event.status === 'highlight' ? 'bg-amber-500/10 border border-amber-500/20' :
+                  event.status === 'warning' ? 'bg-destructive/10 border border-destructive/20' :
+                  event.status === 'success' ? 'bg-success/10 border border-success/20' :
+                  'bg-muted/30'
+                }`}
+              >
+                <span className="text-sm text-foreground">{event.label}</span>
+                <span className={`text-sm font-medium ${
+                  event.status === 'warning' ? 'text-amber-400' :
+                  event.status === 'success' ? 'text-success' :
+                  'text-muted-foreground'
+                }`}>
+                  {event.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

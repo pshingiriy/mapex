@@ -96,6 +96,24 @@ export const FinancialNav = ({
         </div>
       );
     }
+    if (page === "partnerships") {
+      return (
+        <div className="flex items-center gap-6 text-xs">
+          <button 
+            onClick={() => onSubPageChange?.("general")}
+            className={`${subPage === "general" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            Общий дашборд СП
+          </button>
+          <button 
+            onClick={() => onSubPageChange?.("detail")}
+            className={`${subPage === "detail" ? "text-primary font-medium border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"} transition-colors pb-2`}
+          >
+            СП
+          </button>
+        </div>
+      );
+    }
 
     return null;
   };
@@ -161,6 +179,14 @@ export const FinancialNav = ({
                 onClick={() => navigate('/structure')}
               >
                 Структура Группы
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`text-xs ${location.pathname === '/partnerships' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => navigate('/partnerships')}
+              >
+                Партнёрства
               </Button>
               <Button 
                 variant="ghost" 

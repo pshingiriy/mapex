@@ -15,7 +15,7 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList } from 'lucide-react';
 import { companies, clusterInfo, isPrivateInvestor, getSupervisors, CompanyData } from '@/data/organizationData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -135,6 +135,7 @@ const CustomNode = ({ data }: any) => {
   const isPrivate = data.isPrivateInvestor;
   const level = data.level;
   const isHighlighted = data.isHighlighted;
+  const isHorizontal = data.isHorizontal;
   
   // Size based on level
   const sizeClass = level === 0 
@@ -147,7 +148,7 @@ const CustomNode = ({ data }: any) => {
   
   const nodeContent = (
     <div className="relative">
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <Handle type="target" position={isHorizontal ? Position.Left : Position.Top} style={{ opacity: 0 }} />
       <div
         onClick={(e) => {
           if (hasChildren) {
@@ -204,7 +205,7 @@ const CustomNode = ({ data }: any) => {
           )}
         </div>
       </div>
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+      <Handle type="source" position={isHorizontal ? Position.Right : Position.Bottom} style={{ opacity: 0 }} />
     </div>
   );
   
@@ -261,7 +262,8 @@ const generateNodesAndEdges = (
   onNavigate: (companyName: string) => void,
   searchTerm: string,
   clusterFilter: string,
-  supervisorFilter: string
+  supervisorFilter: string,
+  isHorizontal: boolean = false
 ) => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
@@ -318,6 +320,7 @@ const generateNodesAndEdges = (
         level: node.level,
         parentInfo: parentInfo.length > 0 ? parentInfo : null,
         isHighlighted: matchingNodeIds.has(node.id),
+        isHorizontal,
       },
     });
     
@@ -394,11 +397,12 @@ const generateNodesAndEdges = (
     const added = addNode(node, x, y, parentId, ownership);
     if (!added) return 0;
     
-    let totalWidth = 0;
+    let totalSize = 0;
     
     if (expandedNodes.has(node.id) && node.children.length > 0) {
       const childSpacing = node.level === 0 ? 200 : 180;
-      const levelSpacing = 140;
+      const levelSpacing = isHorizontal ? 280 : 140;
+      const nodeHeight = 80;
       
       // Filter children based on filters
       const filteredChildren = node.children.filter(child => {
@@ -409,35 +413,55 @@ const generateNodesAndEdges = (
       });
       
       if (filteredChildren.length > 0) {
-        // Calculate positions for children
-        const childWidths: number[] = [];
-        filteredChildren.forEach(child => {
-          const subtreeWidth = getSubtreeWidth(child, expandedNodes, childSpacing, clusterFilter, supervisorFilter);
-          childWidths.push(subtreeWidth);
-        });
-        
-        const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0);
-        let currentX = x - totalChildrenWidth / 2;
-        
-        filteredChildren.forEach((child, index) => {
-          const childX = currentX + childWidths[index] / 2;
-          processNode(child, childX, y + levelSpacing, node.id, child.ownership1);
-          currentX += childWidths[index];
-        });
-        
-        totalWidth = totalChildrenWidth;
+        if (isHorizontal) {
+          // Horizontal layout: children are positioned to the right
+          const childHeights: number[] = [];
+          filteredChildren.forEach(child => {
+            const subtreeHeight = getSubtreeHeight(child, expandedNodes, nodeHeight, clusterFilter, supervisorFilter);
+            childHeights.push(subtreeHeight);
+          });
+          
+          const totalChildrenHeight = childHeights.reduce((a, b) => a + b, 0);
+          let currentY = y - totalChildrenHeight / 2;
+          
+          filteredChildren.forEach((child, index) => {
+            const childY = currentY + childHeights[index] / 2;
+            processNode(child, x + levelSpacing, childY, node.id, child.ownership1);
+            currentY += childHeights[index];
+          });
+          
+          totalSize = totalChildrenHeight;
+        } else {
+          // Vertical layout: children are positioned below
+          const childWidths: number[] = [];
+          filteredChildren.forEach(child => {
+            const subtreeWidth = getSubtreeWidth(child, expandedNodes, childSpacing, clusterFilter, supervisorFilter);
+            childWidths.push(subtreeWidth);
+          });
+          
+          const totalChildrenWidth = childWidths.reduce((a, b) => a + b, 0);
+          let currentX = x - totalChildrenWidth / 2;
+          
+          filteredChildren.forEach((child, index) => {
+            const childX = currentX + childWidths[index] / 2;
+            processNode(child, childX, y + levelSpacing, node.id, child.ownership1);
+            currentX += childWidths[index];
+          });
+          
+          totalSize = totalChildrenWidth;
+        }
       }
     }
     
-    return Math.max(totalWidth, 180);
+    return Math.max(totalSize, isHorizontal ? 80 : 180);
   };
   
-  processNode(data, 600, 50);
+  processNode(data, isHorizontal ? 50 : 600, isHorizontal ? 300 : 50);
   
   return { nodes, edges };
 };
 
-// Helper to calculate subtree width
+// Helper to calculate subtree width (for vertical layout)
 const getSubtreeWidth = (
   node: TreeNode, 
   expandedNodes: Set<string>, 
@@ -467,6 +491,36 @@ const getSubtreeWidth = (
   );
 };
 
+// Helper to calculate subtree height (for horizontal layout)
+const getSubtreeHeight = (
+  node: TreeNode, 
+  expandedNodes: Set<string>, 
+  spacing: number,
+  clusterFilter: string,
+  supervisorFilter: string
+): number => {
+  const company = companies.find(c => c.name === node.name);
+  if (clusterFilter && clusterFilter !== 'all' && company?.cluster !== clusterFilter) return 0;
+  if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter) return 0;
+  
+  if (!expandedNodes.has(node.id) || node.children.length === 0) {
+    return spacing;
+  }
+  
+  const filteredChildren = node.children.filter(child => {
+    const childCompany = companies.find(c => c.name === child.name);
+    if (clusterFilter && clusterFilter !== 'all' && childCompany?.cluster !== clusterFilter) return false;
+    if (supervisorFilter && supervisorFilter !== 'all' && childCompany?.supervisor !== supervisorFilter) return false;
+    return true;
+  });
+  
+  if (filteredChildren.length === 0) return spacing;
+  
+  return filteredChildren.reduce((total, child) => 
+    total + getSubtreeHeight(child, expandedNodes, spacing, clusterFilter, supervisorFilter), 0
+  );
+};
+
 const OrganizationTreeInner = () => {
   const navigate = useNavigate();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -476,6 +530,7 @@ const OrganizationTreeInner = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [clusterFilter, setClusterFilter] = useState('all');
   const [supervisorFilter, setSupervisorFilter] = useState('all');
+  const [isHorizontal, setIsHorizontal] = useState(false);
 
   const handleToggle = useCallback((nodeId: string) => {
     setExpandedNodes(prev => {
@@ -500,6 +555,12 @@ const OrganizationTreeInner = () => {
     setSearchTerm('');
     setClusterFilter('all');
     setSupervisorFilter('all');
+    setIsHorizontal(false);
+    setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
+  }, [fitView]);
+
+  const handleLayoutToggle = useCallback(() => {
+    setIsHorizontal(prev => !prev);
     setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
   }, [fitView]);
 
@@ -532,7 +593,8 @@ const OrganizationTreeInner = () => {
     handleNavigate,
     searchTerm,
     clusterFilter,
-    supervisorFilter
+    supervisorFilter,
+    isHorizontal
   );
   
   const [nodes, setNodes, onNodesChange] = useNodesState(generatedNodes);
@@ -546,11 +608,12 @@ const OrganizationTreeInner = () => {
       handleNavigate,
       searchTerm,
       clusterFilter,
-      supervisorFilter
+      supervisorFilter,
+      isHorizontal
     );
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [expandedNodes, handleToggle, handleNavigate, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter]);
+  }, [expandedNodes, handleToggle, handleNavigate, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter, isHorizontal]);
 
   const supervisors = getSupervisors();
   const clusterNames = Object.keys(clusterInfo);
@@ -604,6 +667,26 @@ const OrganizationTreeInner = () => {
         </Select>
         
         <div className="flex gap-2 ml-auto">
+          <div className="flex items-center gap-1 bg-background/50 rounded-md p-1 border border-border">
+            <Button 
+              variant={!isHorizontal ? "secondary" : "ghost"} 
+              size="sm" 
+              onClick={() => !isHorizontal || handleLayoutToggle()}
+              className="px-2"
+              title="Вертикальный вид"
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={isHorizontal ? "secondary" : "ghost"} 
+              size="sm" 
+              onClick={() => isHorizontal || handleLayoutToggle()}
+              className="px-2"
+              title="Горизонтальный вид"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
           <Button variant="outline" size="sm" onClick={handleReset}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Сбросить

@@ -217,7 +217,8 @@ const CustomNode = ({ data }: any) => {
         </TooltipTrigger>
         <TooltipContent 
           side="right" 
-          className="max-w-xs bg-popover/95 backdrop-blur-sm border-border p-3"
+          className="max-w-xs bg-popover border-border p-3 z-[9999] shadow-xl"
+          sideOffset={8}
         >
           <div className="space-y-2">
             <div className="font-semibold text-foreground">{data.label}</div>

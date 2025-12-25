@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, LayoutList, BarChart3 } from "lucide-react";
 import { clusterInfo, getCompaniesByCluster } from "@/data/organizationData";
 import { CompanyTable } from "@/components/CompanyTable";
+import { ClusterIndicators } from "@/components/ClusterIndicators";
 
 export const Clusters = () => {
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("structure");
 
   const clusters = Object.values(clusterInfo);
 
@@ -21,7 +24,7 @@ export const Clusters = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedCluster(null)}
+            onClick={() => { setSelectedCluster(null); setActiveTab("structure"); }}
             className="gap-2"
           >
             <ArrowLeft size={16} />
@@ -34,10 +37,30 @@ export const Clusters = () => {
           )}
           <h3 className="text-lg font-semibold text-foreground">{selectedCluster}</h3>
         </div>
-        <CompanyTable 
-          companies={companies} 
-          title={`Компании кластера "${selectedCluster}"`} 
-        />
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-secondary/50 mb-4">
+            <TabsTrigger value="structure" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <LayoutList size={16} />
+              Структура кластера
+            </TabsTrigger>
+            <TabsTrigger value="indicators" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <BarChart3 size={16} />
+              Показатели кластера
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="structure" className="mt-0">
+            <CompanyTable 
+              companies={companies} 
+              title={`Компании кластера "${selectedCluster}"`} 
+            />
+          </TabsContent>
+          
+          <TabsContent value="indicators" className="mt-0">
+            <ClusterIndicators clusterName={selectedCluster} />
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

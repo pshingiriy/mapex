@@ -15,7 +15,7 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { companies, clusterInfo, isPrivateInvestor, getSupervisors, CompanyData } from '@/data/organizationData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -561,6 +561,30 @@ const OrganizationTreeInner = () => {
     setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
   }, [fitView]);
 
+  // Get all node IDs that have children
+  const getAllExpandableNodeIds = useCallback((): Set<string> => {
+    const ids = new Set<string>();
+    const collectIds = (node: TreeNode) => {
+      if (node.children.length > 0) {
+        ids.add(node.id);
+        node.children.forEach(collectIds);
+      }
+    };
+    collectIds(organizationData);
+    return ids;
+  }, []);
+
+  const handleExpandAll = useCallback(() => {
+    const allIds = getAllExpandableNodeIds();
+    setExpandedNodes(allIds);
+    setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
+  }, [getAllExpandableNodeIds, fitView]);
+
+  const handleCollapseAll = useCallback(() => {
+    setExpandedNodes(new Set(['1']));
+    setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
+  }, [fitView]);
+
   const handleLayoutToggle = useCallback(() => {
     setIsHorizontal(prev => !prev);
     setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
@@ -689,6 +713,14 @@ const OrganizationTreeInner = () => {
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
+          <Button variant="outline" size="sm" onClick={handleExpandAll} title="Развернуть все">
+            <ChevronsUpDown className="h-4 w-4 mr-2" />
+            Развернуть
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCollapseAll} title="Свернуть все">
+            <ChevronsDownUp className="h-4 w-4 mr-2" />
+            Свернуть
+          </Button>
           <Button variant="outline" size="sm" onClick={handleReset}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Сбросить

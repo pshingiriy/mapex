@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
+import { CompanyDetailPanel } from '@/components/CompanyDetailPanel';
 
 interface TreeNode {
   id: string;
@@ -727,6 +728,11 @@ const OrganizationTreeInner = () => {
   const supervisors = getSupervisors();
   const clusterNames = Object.keys(clusterInfo);
 
+  const handleClosePanel = useCallback(() => {
+    setSelectedNodeId(null);
+    setPathNodeIds(new Set());
+  }, []);
+
   return (
     <div className="w-full h-[calc(100vh-180px)] flex flex-col gap-3">
       {/* Toolbar */}
@@ -815,43 +821,49 @@ const OrganizationTreeInner = () => {
         </div>
       </div>
       
-      {/* Tree */}
-      <div ref={reactFlowWrapper} className="flex-1 bg-dashboard-bg rounded-lg border border-border overflow-hidden">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          nodeTypes={nodeTypes}
-          fitView
-          minZoom={0.2}
-          maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background 
-            color="hsl(var(--muted-foreground))" 
-            gap={20} 
-            size={1}
-            style={{ opacity: 0.1 }}
-          />
-          <Controls 
-            className="bg-card border-border"
-          />
-          <MiniMap 
-            className="bg-card border-border"
-            nodeColor={(node) => {
-              const cluster = node.data.cluster;
-              if (cluster && clusterInfo[cluster]) {
-                return getClusterBorderColor(cluster).replace('/ 0.5)', '/ 1)');
-              }
-              return node.data.isParent 
-                ? 'hsl(var(--primary))' 
-                : 'hsl(var(--secondary))';
-            }}
-            maskColor="hsl(var(--background) / 0.8)"
-          />
-        </ReactFlow>
+      {/* Tree + Panel Container */}
+      <div className="flex-1 flex gap-0 overflow-hidden rounded-lg border border-border">
+        {/* Tree */}
+        <div ref={reactFlowWrapper} className="flex-1 bg-dashboard-bg overflow-hidden">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            nodeTypes={nodeTypes}
+            fitView
+            minZoom={0.2}
+            maxZoom={2}
+            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background 
+              color="hsl(var(--muted-foreground))" 
+              gap={20} 
+              size={1}
+              style={{ opacity: 0.1 }}
+            />
+            <Controls 
+              className="bg-card border-border"
+            />
+            <MiniMap 
+              className="bg-card border-border"
+              nodeColor={(node) => {
+                const cluster = node.data.cluster;
+                if (cluster && clusterInfo[cluster]) {
+                  return getClusterBorderColor(cluster).replace('/ 0.5)', '/ 1)');
+                }
+                return node.data.isParent 
+                  ? 'hsl(var(--primary))' 
+                  : 'hsl(var(--secondary))';
+              }}
+              maskColor="hsl(var(--background) / 0.8)"
+            />
+          </ReactFlow>
+        </div>
+        
+        {/* Detail Panel */}
+        <CompanyDetailPanel companyId={selectedNodeId} onClose={handleClosePanel} />
       </div>
     </div>
   );

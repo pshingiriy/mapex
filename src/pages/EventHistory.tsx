@@ -34,10 +34,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag } from "lucide-react";
+import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag, ChevronLeft, ChevronRight } from "lucide-react";
 import { format, parse, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const EventHistory = () => {
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
@@ -49,6 +51,8 @@ const EventHistory = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CorporateEvent | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const companies = useMemo(() => getUniqueCompanies(), []);
   const curators = useMemo(() => getUniqueCurators(), []);
@@ -96,6 +100,14 @@ const EventHistory = () => {
     });
   }, [dateFrom, dateTo, companyFilter, curatorFilter, clusterFilter, eventTypeFilter, statusFilter, searchTerm]);
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEvents.length / pageSize);
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredEvents.slice(startIndex, startIndex + pageSize);
+  }, [filteredEvents, currentPage, pageSize]);
+
+  // Reset to first page when filters change
   const resetFilters = () => {
     setDateFrom(undefined);
     setDateTo(undefined);
@@ -105,7 +117,19 @@ const EventHistory = () => {
     setEventTypeFilter("all");
     setStatusFilter("all");
     setSearchTerm("");
+    setCurrentPage(1);
   };
+
+  // Reset page when pageSize changes
+  const handlePageSizeChange = (newSize: string) => {
+    setPageSize(Number(newSize));
+    setCurrentPage(1);
+  };
+
+  // Reset page when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [dateFrom, dateTo, companyFilter, curatorFilter, clusterFilter, eventTypeFilter, statusFilter, searchTerm]);
 
   const formatEventDate = (dateTime: string) => {
     const date = parse(dateTime, "yyyy-MM-dd HH:mm", new Date());
@@ -329,7 +353,7 @@ const EventHistory = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredEvents.map((event) => (
+                paginatedEvents.map((event) => (
                   <TableRow 
                     key={event.id} 
                     className="border-border hover:bg-muted/30 transition-colors cursor-pointer"
@@ -362,6 +386,97 @@ const EventHistory = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Pagination */}
+        {filteredEvents.length > 0 && (
+          <div className="flex items-center justify-between mt-4 bg-card/50 backdrop-blur-sm border border-border rounded-lg p-3">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Показывать по:</span>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-[80px] bg-background/50 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    {PAGE_SIZE_OPTIONS.map(size => (
+                      <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Показано {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredEvents.length)} из {filteredEvents.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="h-8"
+              >
+                В начало
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="h-8 w-8 p-0"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8"
+              >
+                В конец
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Event Detail Dialog */}
         <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>

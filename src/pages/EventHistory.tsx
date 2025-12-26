@@ -34,10 +34,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag, ChevronLeft, ChevronRight, Download, FileSpreadsheet } from "lucide-react";
 import { format, parse, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import * as XLSX from "xlsx";
+import { toast } from "@/hooks/use-toast";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -169,17 +171,101 @@ const EventHistory = () => {
   const hasActiveFilters = dateFrom || dateTo || companyFilter !== "all" || curatorFilter !== "all" || 
     clusterFilter !== "all" || eventTypeFilter !== "all" || statusFilter !== "all" || searchTerm;
 
+  // Export functions
+  const prepareExportData = () => {
+    return filteredEvents.map(event => ({
+      "Дата и время": formatEventDate(event.dateTime),
+      "Компания": event.company,
+      "Тип события": event.eventType,
+      "Описание": event.description,
+      "Инициатор": event.initiator,
+      "Кластер": event.cluster,
+      "Статус": event.status
+    }));
+  };
+
+  const exportToExcel = () => {
+    try {
+      const data = prepareExportData();
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "События");
+      
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 18 }, // Дата и время
+        { wch: 25 }, // Компания
+        { wch: 20 }, // Тип события
+        { wch: 50 }, // Описание
+        { wch: 18 }, // Инициатор
+        { wch: 30 }, // Кластер
+        { wch: 15 }, // Статус
+      ];
+
+      XLSX.writeFile(workbook, `история_событий_${format(new Date(), "dd-MM-yyyy")}.xlsx`);
+      toast({
+        title: "Экспорт завершен",
+        description: `Экспортировано ${filteredEvents.length} событий в Excel`,
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка экспорта",
+        description: "Не удалось экспортировать данные",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportToCSV = () => {
+    try {
+      const data = prepareExportData();
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const csv = XLSX.utils.sheet_to_csv(worksheet, { FS: ";" });
+      
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `история_событий_${format(new Date(), "dd-MM-yyyy")}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Экспорт завершен",
+        description: `Экспортировано ${filteredEvents.length} событий в CSV`,
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка экспорта",
+        description: "Не удалось экспортировать данные",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dashboard-bg">
       <FinancialNav page="events" />
       <div className="container mx-auto px-6 py-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            История событий
-          </h2>
-          <p className="text-muted-foreground">
-            Хронология корпоративных событий компаний группы
-          </p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              История событий
+            </h2>
+            <p className="text-muted-foreground">
+              Хронология корпоративных событий компаний группы
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2">
+              <Download className="h-4 w-4" />
+              CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel
+            </Button>
+          </div>
         </div>
 
         {/* Filters Panel */}

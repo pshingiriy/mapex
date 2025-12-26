@@ -911,9 +911,9 @@ const OrganizationTreeInner = () => {
             <RotateCcw className="h-4 w-4 mr-2" />
             Сбросить
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            PNG
+          <Button variant="outline" size="sm" onClick={() => setPdfDialogOpen(true)}>
+            <FileText className="h-4 w-4 mr-2" />
+            PDF
           </Button>
           <Button variant="outline" size="sm" onClick={() => setPdfDialogOpen(true)}>
             <FileText className="h-4 w-4 mr-2" />

@@ -204,6 +204,14 @@ export const FinancialNav = ({
               >
                 Корп.Стандарты
               </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={`text-xs ${location.pathname === '/event-history' ? 'bg-primary/10 text-primary' : ''}`}
+                onClick={() => navigate('/event-history')}
+              >
+                История событий
+              </Button>
             </div>
           </div>
           

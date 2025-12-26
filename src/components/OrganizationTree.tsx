@@ -840,17 +840,39 @@ const OrganizationTreeInner = () => {
             className="bg-card border-border"
           />
           <MiniMap 
-            className="bg-card border-border"
+            className="bg-card border-border !bottom-4 !right-4"
             nodeColor={(node) => {
+              if (node.id === selectedNodeId) {
+                return 'hsl(var(--primary))';
+              }
+              if (pathNodeIds.has(node.id)) {
+                return 'hsl(var(--primary) / 0.7)';
+              }
               const cluster = node.data.cluster;
               if (cluster && clusterInfo[cluster]) {
                 return getClusterBorderColor(cluster).replace('/ 0.5)', '/ 1)');
               }
               return node.data.isParent 
                 ? 'hsl(var(--primary))' 
-                : 'hsl(var(--secondary))';
+                : 'hsl(var(--muted-foreground))';
             }}
+            nodeStrokeColor={(node) => {
+              if (node.id === selectedNodeId) {
+                return 'hsl(var(--primary))';
+              }
+              return 'transparent';
+            }}
+            nodeStrokeWidth={3}
             maskColor="hsl(var(--background) / 0.8)"
+            pannable
+            zoomable
+            style={{ 
+              width: 180, 
+              height: 140,
+              backgroundColor: 'hsl(var(--card))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: '8px',
+            }}
           />
         </ReactFlow>
       </div>

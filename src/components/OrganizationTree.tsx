@@ -136,6 +136,8 @@ const CustomNode = ({ data }: any) => {
   const level = data.level;
   const isHighlighted = data.isHighlighted;
   const isHorizontal = data.isHorizontal;
+  const isInPath = data.isInPath;
+  const isSelected = data.isSelected;
   
   // Size based on level
   const sizeClass = level === 0 
@@ -146,11 +148,22 @@ const CustomNode = ({ data }: any) => {
   
   const textSize = level === 0 ? 'text-sm' : level === 1 ? 'text-xs' : 'text-[11px]';
   
+  // Path highlighting styles
+  const pathStyles = isSelected 
+    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/30' 
+    : isInPath 
+      ? 'ring-1 ring-primary/60 shadow-md shadow-primary/20' 
+      : '';
+  
   const nodeContent = (
     <div className="relative">
       <Handle type="target" position={isHorizontal ? Position.Left : Position.Top} style={{ opacity: 0 }} />
       <div
         onClick={(e) => {
+          e.stopPropagation();
+          data.onSelect();
+        }}
+        onDoubleClick={(e) => {
           if (hasChildren) {
             e.stopPropagation();
             data.onToggle();
@@ -158,7 +171,7 @@ const CustomNode = ({ data }: any) => {
         }}
         style={{
           backgroundColor: data.cluster ? getClusterBgColor(data.cluster) : undefined,
-          borderColor: data.cluster ? getClusterBorderColor(data.cluster) : undefined,
+          borderColor: isInPath && !data.cluster ? 'hsl(var(--primary))' : (data.cluster ? getClusterBorderColor(data.cluster) : undefined),
         }}
         className={`
           ${sizeClass} rounded-xl border-2 backdrop-blur-sm
@@ -167,8 +180,9 @@ const CustomNode = ({ data }: any) => {
             ? 'bg-primary/20 border-primary/50 shadow-lg shadow-primary/20' 
             : 'bg-secondary/30 border-border shadow-md') : 'shadow-md'}
           hover:shadow-lg hover:scale-105
-          ${hasChildren ? 'cursor-pointer' : 'cursor-pointer'}
-          ${isHighlighted ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
+          cursor-pointer
+          ${isHighlighted ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-background' : ''}
+          ${pathStyles}
         `}
       >
         <div className="flex items-center gap-2">
@@ -261,10 +275,13 @@ const generateNodesAndEdges = (
   expandedNodes: Set<string>,
   onToggle: (nodeId: string) => void,
   onNavigate: (companyName: string) => void,
+  onSelectNode: (nodeId: string) => void,
   searchTerm: string,
   clusterFilter: string,
   supervisorFilter: string,
-  isHorizontal: boolean = false
+  isHorizontal: boolean = false,
+  selectedNodeId: string | null = null,
+  pathNodeIds: Set<string> = new Set()
 ) => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
@@ -302,6 +319,9 @@ const generateNodesAndEdges = (
       parentInfo.push({ name: node.parentName2, ownership: node.ownership2 });
     }
     
+    const isInPath = pathNodeIds.has(node.id);
+    const isSelected = selectedNodeId === node.id;
+    
     nodes.push({
       id: node.id,
       type: 'custom',
@@ -313,6 +333,7 @@ const generateNodesAndEdges = (
         isExpanded: expandedNodes.has(node.id),
         onToggle: () => hasChildren && onToggle(node.id),
         onNavigate: () => onNavigate(node.name),
+        onSelect: () => onSelectNode(node.id),
         clusterIcon: cluster?.icon,
         clusterColor: cluster?.color,
         cluster: company?.cluster,
@@ -321,11 +342,14 @@ const generateNodesAndEdges = (
         level: node.level,
         parentInfo: parentInfo.length > 0 ? parentInfo : null,
         isHighlighted: matchingNodeIds.has(node.id),
+        isInPath,
+        isSelected,
         isHorizontal,
       },
     });
     
     if (parentId) {
+      const isEdgeInPath = pathNodeIds.has(parentId) && pathNodeIds.has(node.id);
       edges.push({
         id: `e${parentId}-${node.id}`,
         source: parentId,
@@ -344,16 +368,17 @@ const generateNodesAndEdges = (
         labelBgPadding: [4, 2] as [number, number],
         labelBgBorderRadius: 4,
         style: { 
-          stroke: 'hsl(var(--muted-foreground))',
-          strokeWidth: 1.5,
+          stroke: isEdgeInPath ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+          strokeWidth: isEdgeInPath ? 2.5 : 1.5,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 12,
           height: 12,
-          color: 'hsl(var(--muted-foreground))',
+          color: isEdgeInPath ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
         },
-        animated: false,
+        animated: isEdgeInPath,
+        zIndex: isEdgeInPath ? 10 : 0,
       });
     }
     
@@ -533,6 +558,40 @@ const OrganizationTreeInner = () => {
   const [clusterFilter, setClusterFilter] = useState('all');
   const [supervisorFilter, setSupervisorFilter] = useState('all');
   const [isHorizontal, setIsHorizontal] = useState(false);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [pathNodeIds, setPathNodeIds] = useState<Set<string>>(new Set());
+
+  // Find path from root to a specific node
+  const findPathToNode = useCallback((targetId: string): string[] => {
+    const path: string[] = [];
+    const findPath = (node: TreeNode, currentPath: string[]): boolean => {
+      currentPath.push(node.id);
+      if (node.id === targetId) {
+        path.push(...currentPath);
+        return true;
+      }
+      for (const child of node.children) {
+        if (findPath(child, [...currentPath])) {
+          return true;
+        }
+      }
+      return false;
+    };
+    findPath(organizationData, []);
+    return path;
+  }, []);
+
+  const handleSelectNode = useCallback((nodeId: string) => {
+    if (selectedNodeId === nodeId) {
+      // Deselect if clicking the same node
+      setSelectedNodeId(null);
+      setPathNodeIds(new Set());
+    } else {
+      setSelectedNodeId(nodeId);
+      const path = findPathToNode(nodeId);
+      setPathNodeIds(new Set(path));
+    }
+  }, [selectedNodeId, findPathToNode]);
 
   const handleToggle = useCallback((nodeId: string) => {
     setExpandedNodes(prev => {
@@ -558,6 +617,8 @@ const OrganizationTreeInner = () => {
     setClusterFilter('all');
     setSupervisorFilter('all');
     setIsHorizontal(false);
+    setSelectedNodeId(null);
+    setPathNodeIds(new Set());
     setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
   }, [fitView]);
 
@@ -617,10 +678,13 @@ const OrganizationTreeInner = () => {
     expandedNodes,
     handleToggle,
     handleNavigate,
+    handleSelectNode,
     searchTerm,
     clusterFilter,
     supervisorFilter,
-    isHorizontal
+    isHorizontal,
+    selectedNodeId,
+    pathNodeIds
   );
   
   const [nodes, setNodes, onNodesChange] = useNodesState(generatedNodes);
@@ -632,14 +696,17 @@ const OrganizationTreeInner = () => {
       expandedNodes,
       handleToggle,
       handleNavigate,
+      handleSelectNode,
       searchTerm,
       clusterFilter,
       supervisorFilter,
-      isHorizontal
+      isHorizontal,
+      selectedNodeId,
+      pathNodeIds
     );
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [expandedNodes, handleToggle, handleNavigate, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter, isHorizontal]);
+  }, [expandedNodes, handleToggle, handleNavigate, handleSelectNode, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter, isHorizontal, selectedNodeId, pathNodeIds]);
 
   const supervisors = getSupervisors();
   const clusterNames = Object.keys(clusterInfo);

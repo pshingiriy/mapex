@@ -164,10 +164,11 @@ const CustomNode = ({ data }: any) => {
           data.onSelect();
         }}
         onDoubleClick={(e) => {
+          e.stopPropagation();
           if (hasChildren) {
-            e.stopPropagation();
             data.onToggle();
           }
+          data.onZoomToNode();
         }}
         style={{
           backgroundColor: data.cluster ? getClusterBgColor(data.cluster) : undefined,
@@ -276,6 +277,7 @@ const generateNodesAndEdges = (
   onToggle: (nodeId: string) => void,
   onNavigate: (companyName: string) => void,
   onSelectNode: (nodeId: string) => void,
+  onZoomToNode: (nodeId: string) => void,
   searchTerm: string,
   clusterFilter: string,
   supervisorFilter: string,
@@ -334,6 +336,7 @@ const generateNodesAndEdges = (
         onToggle: () => hasChildren && onToggle(node.id),
         onNavigate: () => onNavigate(node.name),
         onSelect: () => onSelectNode(node.id),
+        onZoomToNode: () => onZoomToNode(node.id),
         clusterIcon: cluster?.icon,
         clusterColor: cluster?.color,
         cluster: company?.cluster,
@@ -551,7 +554,7 @@ const getSubtreeHeight = (
 const OrganizationTreeInner = () => {
   const navigate = useNavigate();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { fitView } = useReactFlow();
+  const { fitView, setCenter, getNode } = useReactFlow();
   
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
   const [searchTerm, setSearchTerm] = useState('');
@@ -592,6 +595,17 @@ const OrganizationTreeInner = () => {
       setPathNodeIds(new Set(path));
     }
   }, [selectedNodeId, findPathToNode]);
+
+  const handleZoomToNode = useCallback((nodeId: string) => {
+    setTimeout(() => {
+      const node = getNode(nodeId);
+      if (node) {
+        const x = node.position.x + 100;
+        const y = node.position.y + 40;
+        setCenter(x, y, { duration: 500, zoom: 1.2 });
+      }
+    }, 100);
+  }, [getNode, setCenter]);
 
   const handleToggle = useCallback((nodeId: string) => {
     setExpandedNodes(prev => {
@@ -679,6 +693,7 @@ const OrganizationTreeInner = () => {
     handleToggle,
     handleNavigate,
     handleSelectNode,
+    handleZoomToNode,
     searchTerm,
     clusterFilter,
     supervisorFilter,
@@ -697,6 +712,7 @@ const OrganizationTreeInner = () => {
       handleToggle,
       handleNavigate,
       handleSelectNode,
+      handleZoomToNode,
       searchTerm,
       clusterFilter,
       supervisorFilter,
@@ -706,7 +722,7 @@ const OrganizationTreeInner = () => {
     );
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [expandedNodes, handleToggle, handleNavigate, handleSelectNode, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter, isHorizontal, selectedNodeId, pathNodeIds]);
+  }, [expandedNodes, handleToggle, handleNavigate, handleSelectNode, handleZoomToNode, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter, isHorizontal, selectedNodeId, pathNodeIds]);
 
   const supervisors = getSupervisors();
   const clusterNames = Object.keys(clusterInfo);

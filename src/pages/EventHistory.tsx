@@ -34,16 +34,18 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag, ChevronLeft, ChevronRight, Download, FileSpreadsheet } from "lucide-react";
+import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag, ChevronLeft, ChevronRight, Download, FileSpreadsheet, Plus } from "lucide-react";
 import { format, parse, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 import { toast } from "@/hooks/use-toast";
+import { EventFormDialog } from "@/components/EventFormDialog";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const EventHistory = () => {
+  const [events, setEvents] = useState<CorporateEvent[]>(corporateEvents);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [companyFilter, setCompanyFilter] = useState<string>("all");
@@ -55,13 +57,14 @@ const EventHistory = () => {
   const [selectedEvent, setSelectedEvent] = useState<CorporateEvent | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
 
-  const companies = useMemo(() => getUniqueCompanies(), []);
-  const curators = useMemo(() => getUniqueCurators(), []);
-  const clusters = useMemo(() => getUniqueClusters(), []);
+  const companies = useMemo(() => [...new Set(events.map(e => e.company))], [events]);
+  const curators = useMemo(() => [...new Set(events.map(e => e.initiator))], [events]);
+  const clusters = useMemo(() => [...new Set(events.map(e => e.cluster))], [events]);
 
   const filteredEvents = useMemo(() => {
-    return corporateEvents.filter(event => {
+    return events.filter(event => {
       // Date range filter
       if (dateFrom || dateTo) {
         const eventDate = parse(event.dateTime, "yyyy-MM-dd HH:mm", new Date());
@@ -126,6 +129,10 @@ const EventHistory = () => {
   const handlePageSizeChange = (newSize: string) => {
     setPageSize(Number(newSize));
     setCurrentPage(1);
+  };
+
+  const handleAddEvent = (newEvent: CorporateEvent) => {
+    setEvents(prev => [newEvent, ...prev]);
   };
 
   // Reset page when filters change
@@ -264,6 +271,10 @@ const EventHistory = () => {
             <Button variant="outline" size="sm" onClick={exportToExcel} className="gap-2">
               <FileSpreadsheet className="h-4 w-4" />
               Excel
+            </Button>
+            <Button size="sm" onClick={() => setIsFormDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Добавить событие
             </Button>
           </div>
         </div>
@@ -655,6 +666,16 @@ const EventHistory = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Event Form Dialog */}
+        <EventFormDialog
+          open={isFormDialogOpen}
+          onOpenChange={setIsFormDialogOpen}
+          onSubmit={handleAddEvent}
+          companies={companies}
+          curators={curators}
+          clusters={clusters}
+        />
       </div>
     </div>
   );

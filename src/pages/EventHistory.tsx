@@ -23,12 +23,18 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, X, Filter } from "lucide-react";
+import { CalendarIcon, Search, X, Filter, Building2, User, Layers, Clock, FileText, Tag } from "lucide-react";
 import { format, parse, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -42,6 +48,7 @@ const EventHistory = () => {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState<CorporateEvent | null>(null);
 
   const companies = useMemo(() => getUniqueCompanies(), []);
   const curators = useMemo(() => getUniqueCurators(), []);
@@ -323,7 +330,11 @@ const EventHistory = () => {
                 </TableRow>
               ) : (
                 filteredEvents.map((event) => (
-                  <TableRow key={event.id} className="border-border hover:bg-muted/30 transition-colors">
+                  <TableRow 
+                    key={event.id} 
+                    className="border-border hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => setSelectedEvent(event)}
+                  >
                     <TableCell className="font-mono text-sm text-foreground">
                       {formatEventDate(event.dateTime)}
                     </TableCell>
@@ -351,6 +362,98 @@ const EventHistory = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Event Detail Dialog */}
+        <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+          <DialogContent className="max-w-2xl bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Детали события
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedEvent && (
+              <div className="space-y-6 mt-4">
+                {/* Status and Type */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  {getEventTypeBadge(selectedEvent.eventType)}
+                  {getStatusBadge(selectedEvent.status)}
+                </div>
+
+                {/* Description */}
+                <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                  <p className="text-foreground text-lg leading-relaxed">
+                    {selectedEvent.description}
+                  </p>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Date & Time */}
+                  <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg border border-border/50">
+                    <Clock className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Дата и время</p>
+                      <p className="text-foreground font-medium">
+                        {formatEventDate(selectedEvent.dateTime)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Company */}
+                  <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg border border-border/50">
+                    <Building2 className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Компания</p>
+                      <p className="text-foreground font-medium">
+                        {selectedEvent.company}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Initiator */}
+                  <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg border border-border/50">
+                    <User className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Инициатор / Куратор</p>
+                      <p className="text-foreground font-medium">
+                        {selectedEvent.initiator}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Cluster */}
+                  <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg border border-border/50">
+                    <Layers className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Кластер / Бизнес-единица</p>
+                      <p className="text-foreground font-medium">
+                        {selectedEvent.cluster}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Event Type */}
+                  <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg border border-border/50 md:col-span-2">
+                    <Tag className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Тип события</p>
+                      <p className="text-foreground font-medium">
+                        {selectedEvent.eventType}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Event ID */}
+                <div className="text-xs text-muted-foreground text-right">
+                  ID события: {selectedEvent.id}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, Users } from 'lucide-react';
 import { companies, clusterInfo, isPrivateInvestor, getSupervisors, CompanyData } from '@/data/organizationData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,15 @@ interface TreeNode {
   supervisor?: string;
   children: TreeNode[];
   level: number;
+  hasIndividualShareholder?: boolean;
 }
+
+// Check if a company has individual (private) shareholders
+const hasIndividualShareholder = (companyName: string): boolean => {
+  const company = companies.find(c => c.name === companyName);
+  if (!company) return false;
+  return isPrivateInvestor(company.parentName2) || isPrivateInvestor(company.parentName1);
+};
 
 // Build tree structure from flat data
 const buildTree = (): TreeNode => {
@@ -54,6 +62,7 @@ const buildTree = (): TreeNode => {
       supervisor: company.supervisor,
       children: [],
       level: 0,
+      hasIndividualShareholder: hasIndividualShareholder(company.name),
     });
   });
   
@@ -133,22 +142,34 @@ const CustomNode = ({ data }: any) => {
   const ClusterIcon = data.clusterIcon;
   const clusterColor = data.clusterColor;
   const isPrivate = data.isPrivateInvestor;
+  const hasIndividualShareholderFlag = data.hasIndividualShareholder;
   const level = data.level;
   const isHighlighted = data.isHighlighted;
   const isHorizontal = data.isHorizontal;
   
-  // Size based on level
+  // Size based on level - optimized spacing
   const sizeClass = level === 0 
-    ? 'min-w-[180px] px-5 py-3' 
+    ? 'min-w-[200px] max-w-[220px] px-5 py-3' 
     : level === 1 
-      ? 'min-w-[160px] px-4 py-2.5' 
-      : 'min-w-[140px] px-3 py-2';
+      ? 'min-w-[180px] max-w-[200px] px-4 py-2.5' 
+      : 'min-w-[160px] max-w-[180px] px-3 py-2';
   
   const textSize = level === 0 ? 'text-sm' : level === 1 ? 'text-xs' : 'text-[11px]';
   
   const nodeContent = (
     <div className="relative">
       <Handle type="target" position={isHorizontal ? Position.Left : Position.Top} style={{ opacity: 0 }} />
+      
+      {/* Individual shareholder indicator badge - positioned in top-left corner */}
+      {hasIndividualShareholderFlag && (
+        <div 
+          className="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-md bg-amber-500 border-2 border-amber-400 shadow-lg flex items-center justify-center"
+          title="Есть физлицо в составе участников"
+        >
+          <Users size={12} className="text-white" />
+        </div>
+      )}
+      
       <div
         onClick={(e) => {
           if (hasChildren) {
@@ -183,17 +204,17 @@ const CustomNode = ({ data }: any) => {
             </div>
           )}
           <div 
-            className="text-center flex-1 cursor-pointer hover:text-primary transition-colors"
+            className="text-center flex-1 cursor-pointer hover:text-primary transition-colors min-w-0"
             onClick={(e) => {
               e.stopPropagation();
               data.onNavigate();
             }}
           >
-            <div className={`${textSize} font-semibold text-foreground whitespace-nowrap`}>
+            <div className={`${textSize} font-semibold text-foreground truncate`}>
               {data.label}
             </div>
             {data.supervisor && level > 0 && (
-              <div className="text-[9px] text-muted-foreground mt-0.5">
+              <div className="text-[9px] text-muted-foreground mt-0.5 truncate">
                 {data.supervisor}
               </div>
             )}
@@ -222,12 +243,21 @@ const CustomNode = ({ data }: any) => {
         >
           <div className="space-y-2">
             <div className="font-semibold text-foreground">{data.label}</div>
+            {hasIndividualShareholderFlag && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-500/10 px-2 py-1 rounded">
+                <Users size={12} />
+                <span>Есть физлицо в составе участников</span>
+              </div>
+            )}
             {data.parentInfo && (
               <div className="text-xs text-muted-foreground">
                 <span className="font-medium">Владельцы:</span>
                 <div className="mt-1 space-y-0.5">
                   {data.parentInfo.map((p: any, i: number) => (
-                    <div key={i}>{p.name}: {p.ownership}</div>
+                    <div key={i} className="flex items-center gap-1">
+                      {isPrivateInvestor(p.name) && <User size={10} className="text-amber-500" />}
+                      <span>{p.name}: {p.ownership}</span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -255,6 +285,28 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
+// Layout constants for better spacing
+const LAYOUT_CONFIG = {
+  // Vertical layout
+  vertical: {
+    nodeWidth: 200,
+    nodeHeight: 70,
+    horizontalGap: 40,
+    verticalGap: 100,
+    siblingSpacing: 220,
+    levelSpacing: 160,
+  },
+  // Horizontal layout
+  horizontal: {
+    nodeWidth: 200,
+    nodeHeight: 70,
+    horizontalGap: 100,
+    verticalGap: 30,
+    siblingSpacing: 100,
+    levelSpacing: 300,
+  },
+};
+
 // Generate nodes and edges from data with expansion state
 const generateNodesAndEdges = (
   data: TreeNode, 
@@ -265,10 +317,12 @@ const generateNodesAndEdges = (
   clusterFilter: string,
   supervisorFilter: string,
   isHorizontal: boolean = false
-) => {
+): { nodes: Node[]; edges: Edge[]; expandedNodeIds: string[] } => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   const searchLower = searchTerm.toLowerCase();
+  const config = isHorizontal ? LAYOUT_CONFIG.horizontal : LAYOUT_CONFIG.vertical;
+  const expandedNodeIds: string[] = [];
   
   // Find matching nodes for highlighting
   const matchingNodeIds = new Set<string>();
@@ -318,6 +372,7 @@ const generateNodesAndEdges = (
         cluster: company?.cluster,
         supervisor: company?.supervisor,
         isPrivateInvestor: isPrivateInvestor(node.name),
+        hasIndividualShareholder: node.hasIndividualShareholder,
         level: node.level,
         parentInfo: parentInfo.length > 0 ? parentInfo : null,
         isHighlighted: matchingNodeIds.has(node.id),
@@ -401,9 +456,8 @@ const generateNodesAndEdges = (
     let totalSize = 0;
     
     if (expandedNodes.has(node.id) && node.children.length > 0) {
-      const childSpacing = node.level === 0 ? 200 : 180;
-      const levelSpacing = isHorizontal ? 280 : 140;
-      const nodeHeight = 80;
+      // Track expanded nodes for smart zoom
+      expandedNodeIds.push(node.id);
       
       // Filter children based on filters
       const filteredChildren = node.children.filter(child => {
@@ -418,7 +472,7 @@ const generateNodesAndEdges = (
           // Horizontal layout: children are positioned to the right
           const childHeights: number[] = [];
           filteredChildren.forEach(child => {
-            const subtreeHeight = getSubtreeHeight(child, expandedNodes, nodeHeight, clusterFilter, supervisorFilter);
+            const subtreeHeight = getSubtreeHeight(child, expandedNodes, config.siblingSpacing, clusterFilter, supervisorFilter);
             childHeights.push(subtreeHeight);
           });
           
@@ -427,7 +481,9 @@ const generateNodesAndEdges = (
           
           filteredChildren.forEach((child, index) => {
             const childY = currentY + childHeights[index] / 2;
-            processNode(child, x + levelSpacing, childY, node.id, child.ownership1);
+            // Track child positions for zoom
+            expandedNodeIds.push(child.id);
+            processNode(child, x + config.levelSpacing, childY, node.id, child.ownership1);
             currentY += childHeights[index];
           });
           
@@ -436,7 +492,7 @@ const generateNodesAndEdges = (
           // Vertical layout: children are positioned below
           const childWidths: number[] = [];
           filteredChildren.forEach(child => {
-            const subtreeWidth = getSubtreeWidth(child, expandedNodes, childSpacing, clusterFilter, supervisorFilter);
+            const subtreeWidth = getSubtreeWidth(child, expandedNodes, config.siblingSpacing, clusterFilter, supervisorFilter);
             childWidths.push(subtreeWidth);
           });
           
@@ -445,7 +501,9 @@ const generateNodesAndEdges = (
           
           filteredChildren.forEach((child, index) => {
             const childX = currentX + childWidths[index] / 2;
-            processNode(child, childX, y + levelSpacing, node.id, child.ownership1);
+            // Track child positions for zoom
+            expandedNodeIds.push(child.id);
+            processNode(child, childX, y + config.levelSpacing, node.id, child.ownership1);
             currentX += childWidths[index];
           });
           
@@ -454,12 +512,13 @@ const generateNodesAndEdges = (
       }
     }
     
-    return Math.max(totalSize, isHorizontal ? 80 : 180);
+    return Math.max(totalSize, isHorizontal ? config.siblingSpacing : config.siblingSpacing);
   };
   
-  processNode(data, isHorizontal ? 50 : 600, isHorizontal ? 300 : 50);
+  // Start position centered
+  processNode(data, isHorizontal ? 100 : 800, isHorizontal ? 400 : 80);
   
-  return { nodes, edges };
+  return { nodes, edges, expandedNodeIds };
 };
 
 // Helper to calculate subtree width (for vertical layout)
@@ -525,27 +584,104 @@ const getSubtreeHeight = (
 const OrganizationTreeInner = () => {
   const navigate = useNavigate();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { fitView } = useReactFlow();
+  const { fitView, setViewport, getNodes, getViewport } = useReactFlow();
   
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
   const [searchTerm, setSearchTerm] = useState('');
   const [clusterFilter, setClusterFilter] = useState('all');
   const [supervisorFilter, setSupervisorFilter] = useState('all');
   const [isHorizontal, setIsHorizontal] = useState(false);
+  const [lastExpandedNodeId, setLastExpandedNodeId] = useState<string | null>(null);
+
+  // Smart zoom to expanded cluster
+  const smartZoomToExpanded = useCallback((expandedNodeId: string, wasExpanded: boolean) => {
+    if (!wasExpanded) {
+      // Node was collapsed, just fit view
+      setTimeout(() => fitView({ duration: 500, padding: 0.15 }), 100);
+      return;
+    }
+
+    // Node was expanded - zoom to show expanded children
+    setTimeout(() => {
+      const allNodes = getNodes();
+      const expandedNode = allNodes.find(n => n.id === expandedNodeId);
+      
+      if (!expandedNode) {
+        fitView({ duration: 500, padding: 0.15 });
+        return;
+      }
+
+      // Find children of the expanded node
+      const childNodes = allNodes.filter(n => {
+        const company = companies.find(c => c.id.toString() === n.id);
+        const parentCompany = companies.find(c => c.name === company?.parentName1);
+        return parentCompany?.id.toString() === expandedNodeId;
+      });
+
+      if (childNodes.length === 0) {
+        fitView({ duration: 500, padding: 0.15 });
+        return;
+      }
+
+      // Calculate bounding box of expanded node + its children
+      const nodesToFit = [expandedNode, ...childNodes];
+      const minX = Math.min(...nodesToFit.map(n => n.position.x)) - 100;
+      const maxX = Math.max(...nodesToFit.map(n => n.position.x)) + 300;
+      const minY = Math.min(...nodesToFit.map(n => n.position.y)) - 50;
+      const maxY = Math.max(...nodesToFit.map(n => n.position.y)) + 150;
+
+      const width = maxX - minX;
+      const height = maxY - minY;
+      
+      // Get container dimensions
+      const container = reactFlowWrapper.current;
+      if (!container) {
+        fitView({ duration: 500, padding: 0.15 });
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
+
+      // Calculate zoom level to fit all nodes with padding
+      const zoomX = containerWidth / (width * 1.3);
+      const zoomY = containerHeight / (height * 1.3);
+      const newZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.3), 1.5);
+
+      // Calculate center position
+      const centerX = minX + width / 2;
+      const centerY = minY + height / 2;
+
+      // Set viewport to center on expanded cluster
+      setViewport(
+        {
+          x: containerWidth / 2 - centerX * newZoom,
+          y: containerHeight / 2 - centerY * newZoom,
+          zoom: newZoom,
+        },
+        { duration: 500 }
+      );
+    }, 150);
+  }, [fitView, getNodes, setViewport]);
 
   const handleToggle = useCallback((nodeId: string) => {
+    let wasExpanded = false;
     setExpandedNodes(prev => {
       const newSet = new Set(prev);
       if (newSet.has(nodeId)) {
         newSet.delete(nodeId);
+        wasExpanded = false;
       } else {
         newSet.add(nodeId);
+        wasExpanded = true;
       }
       return newSet;
     });
-    // Smooth animation after toggle
-    setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
-  }, [fitView]);
+    setLastExpandedNodeId(nodeId);
+    // Use smart zoom after toggle
+    setTimeout(() => smartZoomToExpanded(nodeId, !expandedNodes.has(nodeId)), 50);
+  }, [smartZoomToExpanded, expandedNodes]);
 
   const handleNavigate = useCallback((companyName: string) => {
     navigate('/', { state: { selectedCompany: companyName } });
@@ -668,6 +804,14 @@ const OrganizationTreeInner = () => {
         </Select>
         
         <div className="flex gap-2 ml-auto">
+          {/* Legend for individual shareholder indicator */}
+          <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground bg-background/50 rounded border border-border">
+            <div className="w-4 h-4 rounded-sm bg-amber-500 flex items-center justify-center">
+              <Users size={10} className="text-white" />
+            </div>
+            <span>Есть физлицо</span>
+          </div>
+          
           <div className="flex items-center gap-1 bg-background/50 rounded-md p-1 border border-border">
             <Button 
               variant={!isHorizontal ? "secondary" : "ghost"} 
@@ -708,10 +852,13 @@ const OrganizationTreeInner = () => {
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           fitView
-          minZoom={0.2}
+          minZoom={0.15}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
           proOptions={{ hideAttribution: true }}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
         >
           <Background 
             color="hsl(var(--muted-foreground))" 
@@ -725,6 +872,10 @@ const OrganizationTreeInner = () => {
           <MiniMap 
             className="bg-card border-border"
             nodeColor={(node) => {
+              // Highlight nodes with individual shareholders
+              if (node.data.hasIndividualShareholder) {
+                return 'hsl(45 93% 47%)'; // amber color
+              }
               const cluster = node.data.cluster;
               if (cluster && clusterInfo[cluster]) {
                 return getClusterBorderColor(cluster).replace('/ 0.5)', '/ 1)');

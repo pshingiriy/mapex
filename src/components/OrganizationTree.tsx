@@ -13,9 +13,11 @@ import ReactFlow, {
   Position,
   useReactFlow,
   ReactFlowProvider,
+  getNodesBounds,
+  getViewportForBounds,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, ChevronsDownUp, ChevronsUpDown, FileText } from 'lucide-react';
 import { companies, clusterInfo, isPrivateInvestor, getSupervisors, CompanyData } from '@/data/organizationData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
+import { jsPDF } from 'jspdf';
+import { PdfExportDialog, PdfExportSettings } from './PdfExportDialog';
 
 interface TreeNode {
   id: string;
@@ -555,7 +559,7 @@ const getSubtreeHeight = (
 const OrganizationTreeInner = () => {
   const navigate = useNavigate();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { fitView, setCenter, getNode } = useReactFlow();
+  const { fitView, setCenter, getNode, getNodes } = useReactFlow();
   
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
   const [searchTerm, setSearchTerm] = useState('');
@@ -564,6 +568,8 @@ const OrganizationTreeInner = () => {
   const [isHorizontal, setIsHorizontal] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [pathNodeIds, setPathNodeIds] = useState<Set<string>>(new Set());
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   // Find path from root to a specific node
   const findPathToNode = useCallback((targetId: string): string[] => {
@@ -688,6 +694,102 @@ const OrganizationTreeInner = () => {
     }
   }, []);
 
+  const handleExportPdf = useCallback(async (settings: PdfExportSettings) => {
+    if (!reactFlowWrapper.current) return;
+    
+    setIsExportingPdf(true);
+    
+    try {
+      const flowElement = reactFlowWrapper.current.querySelector('.react-flow__viewport') as HTMLElement;
+      if (!flowElement) {
+        throw new Error('Viewport not found');
+      }
+      
+      const currentNodes = getNodes();
+      if (currentNodes.length === 0) {
+        throw new Error('No nodes to export');
+      }
+      
+      const nodesBounds = getNodesBounds(currentNodes);
+      const padding = 50;
+      
+      // Calculate image dimensions based on tree size
+      const imageWidth = (nodesBounds.width + padding * 2) * settings.scale;
+      const imageHeight = (nodesBounds.height + padding * 2) * settings.scale;
+      
+      // Get viewport for full tree capture
+      const viewport = getViewportForBounds(
+        nodesBounds,
+        imageWidth,
+        imageHeight,
+        0.5,
+        2,
+        padding
+      );
+      
+      // Create high-res image
+      const dataUrl = await toPng(flowElement, {
+        backgroundColor: '#0f172a',
+        width: imageWidth,
+        height: imageHeight,
+        style: {
+          width: `${imageWidth}px`,
+          height: `${imageHeight}px`,
+          transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+        },
+        quality: 1,
+        pixelRatio: 2,
+      });
+      
+      // Paper sizes in mm
+      const paperSizes = {
+        a4: { width: 210, height: 297 },
+        a3: { width: 297, height: 420 },
+        a2: { width: 420, height: 594 },
+        a1: { width: 594, height: 841 },
+      };
+      
+      const paper = paperSizes[settings.paperSize];
+      const pdfWidth = settings.orientation === 'landscape' ? paper.height : paper.width;
+      const pdfHeight = settings.orientation === 'landscape' ? paper.width : paper.height;
+      
+      const pdf = new jsPDF({
+        orientation: settings.orientation,
+        unit: 'mm',
+        format: settings.paperSize,
+      });
+      
+      // Calculate image placement to fit and center
+      const imgAspect = imageWidth / imageHeight;
+      const pageAspect = pdfWidth / pdfHeight;
+      
+      let finalWidth: number;
+      let finalHeight: number;
+      
+      if (imgAspect > pageAspect) {
+        finalWidth = pdfWidth - 10;
+        finalHeight = finalWidth / imgAspect;
+      } else {
+        finalHeight = pdfHeight - 10;
+        finalWidth = finalHeight * imgAspect;
+      }
+      
+      const x = (pdfWidth - finalWidth) / 2;
+      const y = (pdfHeight - finalHeight) / 2;
+      
+      pdf.addImage(dataUrl, 'PNG', x, y, finalWidth, finalHeight);
+      pdf.save('organization-structure.pdf');
+      
+      toast.success('Структура экспортирована в PDF');
+      setPdfDialogOpen(false);
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Ошибка экспорта в PDF');
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }, [getNodes]);
+
   const { nodes: generatedNodes, edges: generatedEdges } = generateNodesAndEdges(
     organizationData, 
     expandedNodes,
@@ -811,10 +913,21 @@ const OrganizationTreeInner = () => {
           </Button>
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
-            Экспорт PNG
+            PNG
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setPdfDialogOpen(true)}>
+            <FileText className="h-4 w-4 mr-2" />
+            PDF
           </Button>
         </div>
       </div>
+      
+      <PdfExportDialog
+        open={pdfDialogOpen}
+        onOpenChange={setPdfDialogOpen}
+        onExport={handleExportPdf}
+        isExporting={isExportingPdf}
+      />
       
       {/* Tree */}
       <div ref={reactFlowWrapper} className="flex-1 bg-dashboard-bg rounded-lg border border-border overflow-hidden">

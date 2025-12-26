@@ -231,9 +231,10 @@ const CustomNode = ({ data }: any) => {
           {nodeContent}
         </TooltipTrigger>
         <TooltipContent 
-          side="right" 
-          className="max-w-xs bg-popover border-border p-3 z-[9999] shadow-xl"
+          side="top" 
+          className="max-w-xs bg-popover border-border p-3 shadow-xl"
           sideOffset={8}
+          style={{ zIndex: 99999 }}
         >
           <div className="space-y-2">
             <div className="font-semibold text-foreground">{data.label}</div>

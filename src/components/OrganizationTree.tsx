@@ -15,12 +15,11 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, RotateCcw, Download, LayoutGrid, LayoutList, ChevronsDownUp, ChevronsUpDown } from 'lucide-react';
 import { companies, clusterInfo, isPrivateInvestor, getSupervisors, CompanyData } from '@/data/organizationData';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { SearchWithAutocomplete } from '@/components/SearchWithAutocomplete';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 
@@ -279,22 +278,21 @@ const generateNodesAndEdges = (
   onNavigate: (companyName: string) => void,
   onSelectNode: (nodeId: string) => void,
   onZoomToNode: (nodeId: string) => void,
-  searchTerm: string,
-  clusterFilter: string,
-  supervisorFilter: string,
+  companyFilters: string[],
+  clusterFilters: string[],
+  supervisorFilters: string[],
   isHorizontal: boolean = false,
   selectedNodeId: string | null = null,
   pathNodeIds: Set<string> = new Set()
 ) => {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
-  const searchLower = searchTerm.toLowerCase();
   
   // Find matching nodes for highlighting
   const matchingNodeIds = new Set<string>();
-  if (searchTerm) {
+  if (companyFilters.length > 0) {
     companies.forEach(company => {
-      if (company.name.toLowerCase().includes(searchLower)) {
+      if (companyFilters.includes(company.name)) {
         matchingNodeIds.add(company.id.toString());
       }
     });
@@ -305,11 +303,15 @@ const generateNodesAndEdges = (
     const company = companies.find(c => c.name === node.name);
     const cluster = company?.cluster ? clusterInfo[company.cluster] : null;
     
-    // Check filters
-    if (clusterFilter && clusterFilter !== 'all' && company?.cluster !== clusterFilter && node.level > 0) {
-      return false;
-    }
-    if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter && node.level > 0) {
+    // Check filters - if no filters, show all; if filters exist, check match
+    const matchesCompany = companyFilters.length === 0 || companyFilters.includes(node.name);
+    const matchesCluster = clusterFilters.length === 0 || (company?.cluster && clusterFilters.includes(company.cluster));
+    const matchesSupervisor = supervisorFilters.length === 0 || (company?.supervisor && supervisorFilters.includes(company.supervisor));
+    
+    // For root node (level 0), always show
+    // For other nodes, check if they match any active filter
+    const hasActiveFilters = companyFilters.length > 0 || clusterFilters.length > 0 || supervisorFilters.length > 0;
+    if (node.level > 0 && hasActiveFilters && !matchesCompany && !matchesCluster && !matchesSupervisor) {
       return false;
     }
     
@@ -438,9 +440,11 @@ const generateNodesAndEdges = (
       // Filter children based on filters
       const filteredChildren = node.children.filter(child => {
         const company = companies.find(c => c.name === child.name);
-        if (clusterFilter && clusterFilter !== 'all' && company?.cluster !== clusterFilter) return false;
-        if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter) return false;
-        return true;
+        const matchesCompanyFilter = companyFilters.length === 0 || companyFilters.includes(child.name);
+        const matchesClusterFilter = clusterFilters.length === 0 || (company?.cluster && clusterFilters.includes(company.cluster));
+        const matchesSupervisorFilter = supervisorFilters.length === 0 || (company?.supervisor && supervisorFilters.includes(company.supervisor));
+        const hasFilters = companyFilters.length > 0 || clusterFilters.length > 0 || supervisorFilters.length > 0;
+        return !hasFilters || matchesCompanyFilter || matchesClusterFilter || matchesSupervisorFilter;
       });
       
       if (filteredChildren.length > 0) {
@@ -448,7 +452,7 @@ const generateNodesAndEdges = (
           // Horizontal layout: children are positioned to the right
           const childHeights: number[] = [];
           filteredChildren.forEach(child => {
-            const subtreeHeight = getSubtreeHeight(child, expandedNodes, nodeHeight, clusterFilter, supervisorFilter);
+            const subtreeHeight = getSubtreeHeight(child, expandedNodes, nodeHeight, companyFilters, clusterFilters, supervisorFilters);
             childHeights.push(subtreeHeight);
           });
           
@@ -466,7 +470,7 @@ const generateNodesAndEdges = (
           // Vertical layout: children are positioned below
           const childWidths: number[] = [];
           filteredChildren.forEach(child => {
-            const subtreeWidth = getSubtreeWidth(child, expandedNodes, childSpacing, clusterFilter, supervisorFilter);
+            const subtreeWidth = getSubtreeWidth(child, expandedNodes, childSpacing, companyFilters, clusterFilters, supervisorFilters);
             childWidths.push(subtreeWidth);
           });
           
@@ -497,12 +501,17 @@ const getSubtreeWidth = (
   node: TreeNode, 
   expandedNodes: Set<string>, 
   spacing: number,
-  clusterFilter: string,
-  supervisorFilter: string
+  companyFilters: string[],
+  clusterFilters: string[],
+  supervisorFilters: string[]
 ): number => {
   const company = companies.find(c => c.name === node.name);
-  if (clusterFilter && clusterFilter !== 'all' && company?.cluster !== clusterFilter) return 0;
-  if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter) return 0;
+  const matchesCompany = companyFilters.length === 0 || companyFilters.includes(node.name);
+  const matchesCluster = clusterFilters.length === 0 || (company?.cluster && clusterFilters.includes(company.cluster));
+  const matchesSupervisor = supervisorFilters.length === 0 || (company?.supervisor && supervisorFilters.includes(company.supervisor));
+  const hasFilters = companyFilters.length > 0 || clusterFilters.length > 0 || supervisorFilters.length > 0;
+  
+  if (hasFilters && !matchesCompany && !matchesCluster && !matchesSupervisor) return 0;
   
   if (!expandedNodes.has(node.id) || node.children.length === 0) {
     return Math.max(spacing, 220);
@@ -510,15 +519,16 @@ const getSubtreeWidth = (
   
   const filteredChildren = node.children.filter(child => {
     const childCompany = companies.find(c => c.name === child.name);
-    if (clusterFilter && clusterFilter !== 'all' && childCompany?.cluster !== clusterFilter) return false;
-    if (supervisorFilter && supervisorFilter !== 'all' && childCompany?.supervisor !== supervisorFilter) return false;
-    return true;
+    const matchesCompanyFilter = companyFilters.length === 0 || companyFilters.includes(child.name);
+    const matchesClusterFilter = clusterFilters.length === 0 || (childCompany?.cluster && clusterFilters.includes(childCompany.cluster));
+    const matchesSupervisorFilter = supervisorFilters.length === 0 || (childCompany?.supervisor && supervisorFilters.includes(childCompany.supervisor));
+    return !hasFilters || matchesCompanyFilter || matchesClusterFilter || matchesSupervisorFilter;
   });
   
   if (filteredChildren.length === 0) return spacing;
   
   return filteredChildren.reduce((total, child) => 
-    total + getSubtreeWidth(child, expandedNodes, spacing, clusterFilter, supervisorFilter), 0
+    total + getSubtreeWidth(child, expandedNodes, spacing, companyFilters, clusterFilters, supervisorFilters), 0
   );
 };
 
@@ -527,12 +537,17 @@ const getSubtreeHeight = (
   node: TreeNode, 
   expandedNodes: Set<string>, 
   spacing: number,
-  clusterFilter: string,
-  supervisorFilter: string
+  companyFilters: string[],
+  clusterFilters: string[],
+  supervisorFilters: string[]
 ): number => {
   const company = companies.find(c => c.name === node.name);
-  if (clusterFilter && clusterFilter !== 'all' && company?.cluster !== clusterFilter) return 0;
-  if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter) return 0;
+  const matchesCompany = companyFilters.length === 0 || companyFilters.includes(node.name);
+  const matchesCluster = clusterFilters.length === 0 || (company?.cluster && clusterFilters.includes(company.cluster));
+  const matchesSupervisor = supervisorFilters.length === 0 || (company?.supervisor && supervisorFilters.includes(company.supervisor));
+  const hasFilters = companyFilters.length > 0 || clusterFilters.length > 0 || supervisorFilters.length > 0;
+  
+  if (hasFilters && !matchesCompany && !matchesCluster && !matchesSupervisor) return 0;
   
   if (!expandedNodes.has(node.id) || node.children.length === 0) {
     return Math.max(spacing, 100);
@@ -540,15 +555,16 @@ const getSubtreeHeight = (
   
   const filteredChildren = node.children.filter(child => {
     const childCompany = companies.find(c => c.name === child.name);
-    if (clusterFilter && clusterFilter !== 'all' && childCompany?.cluster !== clusterFilter) return false;
-    if (supervisorFilter && supervisorFilter !== 'all' && childCompany?.supervisor !== supervisorFilter) return false;
-    return true;
+    const matchesCompanyFilter = companyFilters.length === 0 || companyFilters.includes(child.name);
+    const matchesClusterFilter = clusterFilters.length === 0 || (childCompany?.cluster && clusterFilters.includes(childCompany.cluster));
+    const matchesSupervisorFilter = supervisorFilters.length === 0 || (childCompany?.supervisor && supervisorFilters.includes(childCompany.supervisor));
+    return !hasFilters || matchesCompanyFilter || matchesClusterFilter || matchesSupervisorFilter;
   });
   
   if (filteredChildren.length === 0) return spacing;
   
   return filteredChildren.reduce((total, child) => 
-    total + getSubtreeHeight(child, expandedNodes, spacing, clusterFilter, supervisorFilter), 0
+    total + getSubtreeHeight(child, expandedNodes, spacing, companyFilters, clusterFilters, supervisorFilters), 0
   );
 };
 
@@ -558,12 +574,15 @@ const OrganizationTreeInner = () => {
   const { fitView, setCenter, getNode } = useReactFlow();
   
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
-  const [searchTerm, setSearchTerm] = useState('');
-  const [clusterFilter, setClusterFilter] = useState('all');
-  const [supervisorFilter, setSupervisorFilter] = useState('all');
+  const [searchFilters, setSearchFilters] = useState<Array<{ type: 'company' | 'cluster' | 'supervisor'; value: string; label: string }>>([]);
   const [isHorizontal, setIsHorizontal] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [pathNodeIds, setPathNodeIds] = useState<Set<string>>(new Set());
+
+  // Derive filters from search filters
+  const companyFilters = searchFilters.filter(f => f.type === 'company').map(f => f.value);
+  const clusterFilters = searchFilters.filter(f => f.type === 'cluster').map(f => f.value);
+  const supervisorFilters = searchFilters.filter(f => f.type === 'supervisor').map(f => f.value);
 
   // Find path from root to a specific node
   const findPathToNode = useCallback((targetId: string): string[] => {
@@ -628,14 +647,24 @@ const OrganizationTreeInner = () => {
 
   const handleReset = useCallback(() => {
     setExpandedNodes(new Set(['1']));
-    setSearchTerm('');
-    setClusterFilter('all');
-    setSupervisorFilter('all');
+    setSearchFilters([]);
     setIsHorizontal(false);
     setSelectedNodeId(null);
     setPathNodeIds(new Set());
     setTimeout(() => fitView({ duration: 400, padding: 0.2 }), 50);
   }, [fitView]);
+
+  const handleFilterChange = useCallback((filters: Array<{ type: 'company' | 'cluster' | 'supervisor'; value: string; label: string }>) => {
+    setSearchFilters(filters);
+  }, []);
+
+  const handleFilterRemove = useCallback((filter: { type: 'company' | 'cluster' | 'supervisor'; value: string; label: string }) => {
+    setSearchFilters(prev => prev.filter(f => !(f.type === filter.type && f.value === filter.value)));
+  }, []);
+
+  const handleClearAllFilters = useCallback(() => {
+    setSearchFilters([]);
+  }, []);
 
   // Get all node IDs that have children
   const getAllExpandableNodeIds = useCallback((): Set<string> => {
@@ -695,9 +724,9 @@ const OrganizationTreeInner = () => {
     handleNavigate,
     handleSelectNode,
     handleZoomToNode,
-    searchTerm,
-    clusterFilter,
-    supervisorFilter,
+    companyFilters,
+    clusterFilters,
+    supervisorFilters,
     isHorizontal,
     selectedNodeId,
     pathNodeIds
@@ -714,67 +743,27 @@ const OrganizationTreeInner = () => {
       handleNavigate,
       handleSelectNode,
       handleZoomToNode,
-      searchTerm,
-      clusterFilter,
-      supervisorFilter,
+      companyFilters,
+      clusterFilters,
+      supervisorFilters,
       isHorizontal,
       selectedNodeId,
       pathNodeIds
     );
     setNodes(newNodes);
     setEdges(newEdges);
-  }, [expandedNodes, handleToggle, handleNavigate, handleSelectNode, handleZoomToNode, setNodes, setEdges, searchTerm, clusterFilter, supervisorFilter, isHorizontal, selectedNodeId, pathNodeIds]);
-
-  const supervisors = getSupervisors();
-  const clusterNames = Object.keys(clusterInfo);
+  }, [expandedNodes, handleToggle, handleNavigate, handleSelectNode, handleZoomToNode, setNodes, setEdges, companyFilters, clusterFilters, supervisorFilters, isHorizontal, selectedNodeId, pathNodeIds]);
 
   return (
     <div className="w-full h-[calc(100vh-180px)] flex flex-col gap-3">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 p-3 bg-card/50 rounded-lg border border-border">
-        <div className="relative flex-1 min-w-[200px] max-w-[300px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Поиск компании..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 bg-background/50"
-          />
-          {searchTerm && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-              onClick={() => setSearchTerm('')}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
-        
-        <Select value={clusterFilter} onValueChange={setClusterFilter}>
-          <SelectTrigger className="w-[200px] bg-background/50">
-            <SelectValue placeholder="Все кластеры" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все кластеры</SelectItem>
-            {clusterNames.map(cluster => (
-              <SelectItem key={cluster} value={cluster}>{cluster}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={supervisorFilter} onValueChange={setSupervisorFilter}>
-          <SelectTrigger className="w-[180px] bg-background/50">
-            <SelectValue placeholder="Все кураторы" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все кураторы</SelectItem>
-            {supervisors.map(s => (
-              <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchWithAutocomplete
+          onSearch={handleFilterChange}
+          selectedFilters={searchFilters}
+          onFilterRemove={handleFilterRemove}
+          onClearAll={handleClearAllFilters}
+        />
         
         <div className="flex gap-2 ml-auto">
           <div className="flex items-center gap-1 bg-background/50 rounded-md p-1 border border-border">

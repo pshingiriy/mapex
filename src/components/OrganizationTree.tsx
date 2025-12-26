@@ -15,7 +15,7 @@ import ReactFlow, {
   ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, Users, Focus } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, Search, RotateCcw, Download, X, LayoutGrid, LayoutList, Users } from 'lucide-react';
 import { companies, clusterInfo, isPrivateInvestor, getSupervisors, CompanyData } from '@/data/organizationData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -584,7 +584,7 @@ const getSubtreeHeight = (
 const OrganizationTreeInner = () => {
   const navigate = useNavigate();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { fitView, setViewport, getNodes } = useReactFlow();
+  const { fitView, setViewport, getNodes, getViewport } = useReactFlow();
   
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['1']));
   const [searchTerm, setSearchTerm] = useState('');
@@ -592,52 +592,6 @@ const OrganizationTreeInner = () => {
   const [supervisorFilter, setSupervisorFilter] = useState('all');
   const [isHorizontal, setIsHorizontal] = useState(false);
   const [lastExpandedNodeId, setLastExpandedNodeId] = useState<string | null>(null);
-
-  // Smart zoom to a set of nodes
-  const zoomToNodes = useCallback((nodesToFit: Node[], padding: number = 100) => {
-    if (nodesToFit.length === 0) {
-      fitView({ duration: 500, padding: 0.15 });
-      return;
-    }
-
-    const container = reactFlowWrapper.current;
-    if (!container) {
-      fitView({ duration: 500, padding: 0.15 });
-      return;
-    }
-
-    const containerRect = container.getBoundingClientRect();
-    const containerWidth = containerRect.width;
-    const containerHeight = containerRect.height;
-
-    // Calculate bounding box
-    const minX = Math.min(...nodesToFit.map(n => n.position.x)) - padding;
-    const maxX = Math.max(...nodesToFit.map(n => n.position.x)) + 300;
-    const minY = Math.min(...nodesToFit.map(n => n.position.y)) - padding / 2;
-    const maxY = Math.max(...nodesToFit.map(n => n.position.y)) + 150;
-
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    // Calculate zoom level to fit all nodes with padding
-    const zoomX = containerWidth / (width * 1.2);
-    const zoomY = containerHeight / (height * 1.2);
-    const newZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.2), 1.5);
-
-    // Calculate center position
-    const centerX = minX + width / 2;
-    const centerY = minY + height / 2;
-
-    // Set viewport to center on nodes
-    setViewport(
-      {
-        x: containerWidth / 2 - centerX * newZoom,
-        y: containerHeight / 2 - centerY * newZoom,
-        zoom: newZoom,
-      },
-      { duration: 500 }
-    );
-  }, [fitView, setViewport]);
 
   // Smart zoom to expanded cluster
   const smartZoomToExpanded = useCallback((expandedNodeId: string, wasExpanded: boolean) => {
@@ -669,61 +623,47 @@ const OrganizationTreeInner = () => {
         return;
       }
 
-      zoomToNodes([expandedNode, ...childNodes]);
-    }, 150);
-  }, [fitView, getNodes, zoomToNodes]);
+      // Calculate bounding box of expanded node + its children
+      const nodesToFit = [expandedNode, ...childNodes];
+      const minX = Math.min(...nodesToFit.map(n => n.position.x)) - 100;
+      const maxX = Math.max(...nodesToFit.map(n => n.position.x)) + 300;
+      const minY = Math.min(...nodesToFit.map(n => n.position.y)) - 50;
+      const maxY = Math.max(...nodesToFit.map(n => n.position.y)) + 150;
 
-
-  // Focus on cluster - expand all nodes in cluster and zoom to them
-  const focusOnCluster = useCallback((clusterName: string) => {
-    if (clusterName === 'all') {
-      // Reset to default view
-      setExpandedNodes(new Set(['1']));
-      setTimeout(() => fitView({ duration: 500, padding: 0.15 }), 100);
-      return;
-    }
-
-    // Find all companies in this cluster
-    const clusterCompanies = companies.filter(c => c.cluster === clusterName);
-    const clusterCompanyIds = new Set(clusterCompanies.map(c => c.id.toString()));
-    
-    // Find all parent nodes that need to be expanded to show cluster companies
-    const nodesToExpand = new Set<string>(['1']); // Always expand root
-    
-    clusterCompanies.forEach(company => {
-      let current = company;
-      while (current.parentName1) {
-        const parent = companies.find(c => c.name === current.parentName1);
-        if (parent) {
-          nodesToExpand.add(parent.id.toString());
-          current = parent;
-        } else {
-          break;
-        }
-      }
-    });
-    
-    setExpandedNodes(nodesToExpand);
-    
-    // After nodes are updated, zoom to cluster companies
-    setTimeout(() => {
-      const allNodes = getNodes();
-      const clusterNodes = allNodes.filter(n => clusterCompanyIds.has(n.id));
+      const width = maxX - minX;
+      const height = maxY - minY;
       
-      if (clusterNodes.length > 0) {
-        zoomToNodes(clusterNodes, 150);
-        toast.success(`Фокус на кластере: ${clusterName}`, { duration: 2000 });
+      // Get container dimensions
+      const container = reactFlowWrapper.current;
+      if (!container) {
+        fitView({ duration: 500, padding: 0.15 });
+        return;
       }
-    }, 200);
-  }, [fitView, getNodes, zoomToNodes]);
 
-  // Handle cluster filter change with optional focus
-  const handleClusterFilterChange = useCallback((value: string, shouldFocus: boolean = false) => {
-    setClusterFilter(value);
-    if (shouldFocus && value !== 'all') {
-      setTimeout(() => focusOnCluster(value), 50);
-    }
-  }, [focusOnCluster]);
+      const containerRect = container.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
+
+      // Calculate zoom level to fit all nodes with padding
+      const zoomX = containerWidth / (width * 1.3);
+      const zoomY = containerHeight / (height * 1.3);
+      const newZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.3), 1.5);
+
+      // Calculate center position
+      const centerX = minX + width / 2;
+      const centerY = minY + height / 2;
+
+      // Set viewport to center on expanded cluster
+      setViewport(
+        {
+          x: containerWidth / 2 - centerX * newZoom,
+          y: containerHeight / 2 - centerY * newZoom,
+          zoom: newZoom,
+        },
+        { duration: 500 }
+      );
+    }, 150);
+  }, [fitView, getNodes, setViewport]);
 
   const handleToggle = useCallback((nodeId: string) => {
     let wasExpanded = false;
@@ -839,30 +779,17 @@ const OrganizationTreeInner = () => {
           )}
         </div>
         
-        <div className="flex items-center gap-1">
-          <Select value={clusterFilter} onValueChange={(v) => handleClusterFilterChange(v, false)}>
-            <SelectTrigger className="w-[200px] bg-background/50">
-              <SelectValue placeholder="Все кластеры" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все кластеры</SelectItem>
-              {clusterNames.map(cluster => (
-                <SelectItem key={cluster} value={cluster}>{cluster}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {clusterFilter !== 'all' && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => focusOnCluster(clusterFilter)}
-              title="Фокус на кластере"
-              className="px-2"
-            >
-              <Focus className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        <Select value={clusterFilter} onValueChange={setClusterFilter}>
+          <SelectTrigger className="w-[200px] bg-background/50">
+            <SelectValue placeholder="Все кластеры" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все кластеры</SelectItem>
+            {clusterNames.map(cluster => (
+              <SelectItem key={cluster} value={cluster}>{cluster}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         
         <Select value={supervisorFilter} onValueChange={setSupervisorFilter}>
           <SelectTrigger className="w-[180px] bg-background/50">

@@ -401,9 +401,10 @@ const generateNodesAndEdges = (
     let totalSize = 0;
     
     if (expandedNodes.has(node.id) && node.children.length > 0) {
-      const childSpacing = node.level === 0 ? 200 : 180;
-      const levelSpacing = isHorizontal ? 280 : 140;
-      const nodeHeight = 80;
+      // Increased spacing to prevent overlapping
+      const childSpacing = node.level === 0 ? 280 : node.level === 1 ? 240 : 220;
+      const levelSpacing = isHorizontal ? 350 : 180;
+      const nodeHeight = node.level === 0 ? 120 : node.level === 1 ? 100 : 90;
       
       // Filter children based on filters
       const filteredChildren = node.children.filter(child => {
@@ -454,7 +455,7 @@ const generateNodesAndEdges = (
       }
     }
     
-    return Math.max(totalSize, isHorizontal ? 80 : 180);
+    return Math.max(totalSize, isHorizontal ? 100 : 220);
   };
   
   processNode(data, isHorizontal ? 50 : 600, isHorizontal ? 300 : 50);
@@ -475,7 +476,7 @@ const getSubtreeWidth = (
   if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter) return 0;
   
   if (!expandedNodes.has(node.id) || node.children.length === 0) {
-    return spacing;
+    return Math.max(spacing, 220);
   }
   
   const filteredChildren = node.children.filter(child => {
@@ -505,7 +506,7 @@ const getSubtreeHeight = (
   if (supervisorFilter && supervisorFilter !== 'all' && company?.supervisor !== supervisorFilter) return 0;
   
   if (!expandedNodes.has(node.id) || node.children.length === 0) {
-    return spacing;
+    return Math.max(spacing, 100);
   }
   
   const filteredChildren = node.children.filter(child => {

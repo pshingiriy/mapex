@@ -8,6 +8,7 @@ import OrganizationStructure from "./pages/OrganizationStructure";
 import Partnerships from "./pages/Partnerships";
 import InOrganic from "./pages/InOrganic";
 import CorporateStandards from "./pages/CorporateStandards";
+import EventHistory from "./pages/EventHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/partnerships" element={<Partnerships />} />
           <Route path="/inorganic" element={<InOrganic />} />
           <Route path="/corporate-standards" element={<CorporateStandards />} />
+          <Route path="/event-history" element={<EventHistory />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

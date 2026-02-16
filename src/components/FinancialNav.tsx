@@ -1,4 +1,5 @@
 import { Search, Bell, Settings, User, ChevronDown } from "lucide-react";
+import mapexLogo from "@/assets/mapex_logo1.png";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

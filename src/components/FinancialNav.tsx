@@ -161,7 +161,7 @@ export const FinancialNav = ({
       <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <img src="/mapex_logo1.png" alt="MAPEX ВІ ДЗО" className="h-8 w-auto" />
+            <img src="/mapex_logo_bw.png" alt="MAPEX ВІ ДЗО" className="h-12 w-auto invert brightness-0 filter" style={{ filter: 'invert(1) brightness(100)' }} />
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 

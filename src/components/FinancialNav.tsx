@@ -1,4 +1,5 @@
 import { Search, Bell, Settings, User, ChevronDown } from "lucide-react";
+import mapexLogo from "@/assets/mapex_logo1.png";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -160,7 +161,7 @@ export const FinancialNav = ({
       <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-lg font-bold text-foreground">TelCompany</h1>
+            <img src={mapexLogo} alt="MAPEX ВІ ДЗО" className="h-8 w-auto" />
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 

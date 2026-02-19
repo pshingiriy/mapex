@@ -8,6 +8,55 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 260 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 190 85% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 260 85% 55%;
+
+    --radius: 0.5rem;
+
+    /* Dashboard specific tokens */
+    --dashboard-bg: 220 14% 96%;
+    --dashboard-nav: 0 0% 100%;
+    --metric-card: 220 14% 96%;
+    --table-header: 220 14% 94%;
+    --table-row: 0 0% 100%;
+    --table-row-hover: 220 14% 96%;
+    --chart-bg: 0 0% 100%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(260 85% 55%), hsl(280 85% 60%));
+    --gradient-metric: linear-gradient(135deg, hsl(220 14% 96%), hsl(230 20% 92%));
+    --gradient-purple: linear-gradient(90deg, hsl(260 85% 55%), hsl(280 85% 60%));
+  }
+
+  .dark {
     --background: 255 20% 12%;
     --foreground: 210 40% 98%;
 
@@ -38,8 +87,6 @@ All colors MUST be HSL.
     --border: 255 15% 22%;
     --input: 255 15% 22%;
     --ring: 260 85% 65%;
-
-    --radius: 0.5rem;
 
     /* Dashboard specific tokens */
     --dashboard-bg: 255 25% 10%;

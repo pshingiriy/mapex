@@ -1,4 +1,5 @@
 import { Search, Bell, Settings, User, ChevronDown } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -161,7 +162,7 @@ export const FinancialNav = ({
       <div className="px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <img src="/mapex_logo_bw.png" alt="MAPEX ВІ ДЗО" className="h-28 w-auto" style={{ filter: 'invert(1) brightness(100)' }} />
+            <img src="/mapex_logo_bw.png" alt="MAPEX ВІ ДЗО" className="h-28 w-auto dark:invert dark:brightness-100" />
             <div className="flex items-center gap-1">
               <Button 
                 variant="ghost" 
@@ -224,6 +225,7 @@ export const FinancialNav = ({
                 className="pl-10 w-48 bg-background/50 border-border h-8 text-sm"
               />
             </div>
+            <ThemeToggle />
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Bell className="h-4 w-4" />
             </Button>

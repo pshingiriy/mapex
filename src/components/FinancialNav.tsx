@@ -1,4 +1,5 @@
-import { Search, Bell, Settings, User, ChevronDown } from "lucide-react";
+import { Search, Bell, Settings, User, ChevronDown, Maximize, Minimize } from "lucide-react";
+import { useState, useCallback } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,17 @@ export const FinancialNav = ({
 }: FinancialNavProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  }, []);
 
   const clusterOptions = [
     "Телеком-операторы/B2O",
@@ -226,6 +238,9 @@ export const FinancialNav = ({
               />
             </div>
             <ThemeToggle />
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleFullscreen} title={isFullscreen ? "Выйти из полноэкранного режима" : "Полный экран"}>
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Bell className="h-4 w-4" />
             </Button>

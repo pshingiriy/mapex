@@ -179,7 +179,7 @@ export const FinancialNav = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${page === 'finance' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`text-sm ${page === 'finance' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => {
                   navigate('/');
                 }}
@@ -189,7 +189,7 @@ export const FinancialNav = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/structure' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`text-sm ${location.pathname === '/structure' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => navigate('/structure')}
               >
                 Структура Группы
@@ -197,7 +197,7 @@ export const FinancialNav = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/partnerships' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`text-sm ${location.pathname === '/partnerships' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => navigate('/partnerships')}
               >
                 Партнёрства
@@ -205,7 +205,7 @@ export const FinancialNav = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/inorganic' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`text-sm ${location.pathname === '/inorganic' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => navigate('/inorganic')}
               >
                 НеОрганик
@@ -213,7 +213,7 @@ export const FinancialNav = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/corporate-standards' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`text-sm ${location.pathname === '/corporate-standards' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => navigate('/corporate-standards')}
               >
                 Корп.Стандарты
@@ -221,7 +221,7 @@ export const FinancialNav = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className={`text-xs ${location.pathname === '/event-history' ? 'bg-primary/10 text-primary' : ''}`}
+                className={`text-sm ${location.pathname === '/event-history' ? 'bg-primary/10 text-primary' : ''}`}
                 onClick={() => navigate('/event-history')}
               >
                 История событий
